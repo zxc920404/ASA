@@ -1,0 +1,16 @@
+{
+    "name": "VampireSurvivors.Infrastructure",
+    "rootNamespace": "VampireSurvivors.Infrastructure",
+    "references": [
+        "VampireSurvivors.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

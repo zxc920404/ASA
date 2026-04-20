@@ -1,0 +1,16 @@
+{
+    "name": "VampireSurvivors.Gameplay",
+    "rootNamespace": "VampireSurvivors.Gameplay",
+    "references": [
+        "VampireSurvivors.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,371 @@
+[
+  {
+    "waveId": "wave_01",
+    "startTime": 0,
+    "endTime": 30,
+    "enemyTypes": ["enemy_bat"],
+    "spawnInterval": 2.0,
+    "spawnCount": 3,
+    "statMultiplier": 1.0
+  },
+  {
+    "waveId": "wave_02",
+    "startTime": 30,
+    "endTime": 60,
+    "enemyTypes": ["enemy_bat"],
+    "spawnInterval": 1.8,
+    "spawnCount": 4,
+    "statMultiplier": 1.1
+  },
+  {
+    "waveId": "wave_03",
+    "startTime": 60,
+    "endTime": 90,
+    "enemyTypes": ["enemy_bat", "enemy_skeleton"],
+    "spawnInterval": 1.6,
+    "spawnCount": 4,
+    "statMultiplier": 1.2
+  },
+  {
+    "waveId": "wave_04",
+    "startTime": 90,
+    "endTime": 120,
+    "enemyTypes": ["enemy_bat", "enemy_skeleton"],
+    "spawnInterval": 1.5,
+    "spawnCount": 5,
+    "statMultiplier": 1.3
+  },
+  {
+    "waveId": "wave_05",
+    "startTime": 120,
+    "endTime": 150,
+    "enemyTypes": ["enemy_skeleton"],
+    "spawnInterval": 1.4,
+    "spawnCount": 5,
+    "statMultiplier": 1.4
+  },
+  {
+    "waveId": "wave_06",
+    "startTime": 150,
+    "endTime": 180,
+    "enemyTypes": ["enemy_skeleton", "enemy_werewolf"],
+    "spawnInterval": 1.3,
+    "spawnCount": 5,
+    "statMultiplier": 1.5
+  },
+  {
+    "waveId": "wave_07",
+    "startTime": 180,
+    "endTime": 210,
+    "enemyTypes": ["enemy_skeleton", "enemy_werewolf"],
+    "spawnInterval": 1.2,
+    "spawnCount": 6,
+    "statMultiplier": 1.6
+  },
+  {
+    "waveId": "wave_08",
+    "startTime": 210,
+    "endTime": 240,
+    "enemyTypes": ["enemy_werewolf"],
+    "spawnInterval": 1.1,
+    "spawnCount": 6,
+    "statMultiplier": 1.7
+  },
+  {
+    "waveId": "wave_09",
+    "startTime": 240,
+    "endTime": 270,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 1.0,
+    "spawnCount": 6,
+    "statMultiplier": 1.8
+  },
+  {
+    "waveId": "wave_10",
+    "startTime": 270,
+    "endTime": 300,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 1.0,
+    "spawnCount": 7,
+    "statMultiplier": 1.9
+  },
+  {
+    "waveId": "wave_boss_05min",
+    "startTime": 300,
+    "endTime": 300,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0,
+    "spawnCount": 1,
+    "statMultiplier": 3.0
+  },
+  {
+    "waveId": "wave_11",
+    "startTime": 300,
+    "endTime": 330,
+    "enemyTypes": ["enemy_skeleton", "enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.9,
+    "spawnCount": 7,
+    "statMultiplier": 2.0
+  },
+  {
+    "waveId": "wave_12",
+    "startTime": 330,
+    "endTime": 360,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.9,
+    "spawnCount": 8,
+    "statMultiplier": 2.1
+  },
+  {
+    "waveId": "wave_13",
+    "startTime": 360,
+    "endTime": 390,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.8,
+    "spawnCount": 8,
+    "statMultiplier": 2.2
+  },
+  {
+    "waveId": "wave_14",
+    "startTime": 390,
+    "endTime": 420,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.8,
+    "spawnCount": 8,
+    "statMultiplier": 2.3
+  },
+  {
+    "waveId": "wave_15",
+    "startTime": 420,
+    "endTime": 450,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.7,
+    "spawnCount": 9,
+    "statMultiplier": 2.4
+  },
+  {
+    "waveId": "wave_16",
+    "startTime": 450,
+    "endTime": 480,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.7,
+    "spawnCount": 9,
+    "statMultiplier": 2.5
+  },
+  {
+    "waveId": "wave_17",
+    "startTime": 480,
+    "endTime": 510,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.6,
+    "spawnCount": 9,
+    "statMultiplier": 2.6
+  },
+  {
+    "waveId": "wave_18",
+    "startTime": 510,
+    "endTime": 540,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.6,
+    "spawnCount": 10,
+    "statMultiplier": 2.7
+  },
+  {
+    "waveId": "wave_19",
+    "startTime": 540,
+    "endTime": 570,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.5,
+    "spawnCount": 10,
+    "statMultiplier": 2.8
+  },
+  {
+    "waveId": "wave_20",
+    "startTime": 570,
+    "endTime": 600,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.5,
+    "spawnCount": 10,
+    "statMultiplier": 2.9
+  },
+  {
+    "waveId": "wave_boss_10min",
+    "startTime": 600,
+    "endTime": 600,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0,
+    "spawnCount": 1,
+    "statMultiplier": 4.0
+  },
+  {
+    "waveId": "wave_21",
+    "startTime": 600,
+    "endTime": 660,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.5,
+    "spawnCount": 11,
+    "statMultiplier": 3.0
+  },
+  {
+    "waveId": "wave_22",
+    "startTime": 660,
+    "endTime": 720,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.5,
+    "spawnCount": 12,
+    "statMultiplier": 3.2
+  },
+  {
+    "waveId": "wave_23",
+    "startTime": 720,
+    "endTime": 780,
+    "enemyTypes": ["enemy_werewolf", "enemy_gargoyle"],
+    "spawnInterval": 0.4,
+    "spawnCount": 12,
+    "statMultiplier": 3.4
+  },
+  {
+    "waveId": "wave_24",
+    "startTime": 780,
+    "endTime": 840,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.4,
+    "spawnCount": 13,
+    "statMultiplier": 3.6
+  },
+  {
+    "waveId": "wave_25",
+    "startTime": 840,
+    "endTime": 900,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.4,
+    "spawnCount": 14,
+    "statMultiplier": 3.8
+  },
+  {
+    "waveId": "wave_boss_15min",
+    "startTime": 900,
+    "endTime": 900,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0,
+    "spawnCount": 1,
+    "statMultiplier": 5.0
+  },
+  {
+    "waveId": "wave_26",
+    "startTime": 900,
+    "endTime": 960,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.4,
+    "spawnCount": 14,
+    "statMultiplier": 4.0
+  },
+  {
+    "waveId": "wave_27",
+    "startTime": 960,
+    "endTime": 1020,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.3,
+    "spawnCount": 15,
+    "statMultiplier": 4.2
+  },
+  {
+    "waveId": "wave_28",
+    "startTime": 1020,
+    "endTime": 1080,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.3,
+    "spawnCount": 15,
+    "statMultiplier": 4.4
+  },
+  {
+    "waveId": "wave_29",
+    "startTime": 1080,
+    "endTime": 1140,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.3,
+    "spawnCount": 16,
+    "statMultiplier": 4.6
+  },
+  {
+    "waveId": "wave_30",
+    "startTime": 1140,
+    "endTime": 1200,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.3,
+    "spawnCount": 16,
+    "statMultiplier": 4.8
+  },
+  {
+    "waveId": "wave_boss_20min",
+    "startTime": 1200,
+    "endTime": 1200,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0,
+    "spawnCount": 1,
+    "statMultiplier": 6.0
+  },
+  {
+    "waveId": "wave_31",
+    "startTime": 1200,
+    "endTime": 1320,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.3,
+    "spawnCount": 18,
+    "statMultiplier": 5.0
+  },
+  {
+    "waveId": "wave_32",
+    "startTime": 1320,
+    "endTime": 1440,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.2,
+    "spawnCount": 20,
+    "statMultiplier": 5.5
+  },
+  {
+    "waveId": "wave_33",
+    "startTime": 1440,
+    "endTime": 1560,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.2,
+    "spawnCount": 22,
+    "statMultiplier": 6.0
+  },
+  {
+    "waveId": "wave_boss_25min",
+    "startTime": 1500,
+    "endTime": 1500,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0,
+    "spawnCount": 1,
+    "statMultiplier": 7.0
+  },
+  {
+    "waveId": "wave_34",
+    "startTime": 1560,
+    "endTime": 1680,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.2,
+    "spawnCount": 24,
+    "statMultiplier": 6.5
+  },
+  {
+    "waveId": "wave_35",
+    "startTime": 1680,
+    "endTime": 1800,
+    "enemyTypes": ["enemy_gargoyle"],
+    "spawnInterval": 0.2,
+    "spawnCount": 25,
+    "statMultiplier": 7.0
+  },
+  {
+    "waveId": "wave_boss_30min",
+    "startTime": 1800,
+    "endTime": 1800,
+    "enemyTypes": ["enemy_death"],
+    "spawnInterval": 0,
+    "spawnCount": 1,
+    "statMultiplier": 1.0
+  }
+]
