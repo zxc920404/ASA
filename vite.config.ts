@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
 
-export default defineConfig({
-  base: './',
+// GitHub Pages deploys under /ASA/ sub-path.
+// Use `npm run build:gh-pages` (--mode gh-pages) for deployment.
+export default defineConfig(({ mode }) => ({
+  base: mode === 'gh-pages' ? '/ASA/' : './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -23,4 +25,4 @@ export default defineConfig({
     port: 3000,
     open: true,
   },
-});
+}));
