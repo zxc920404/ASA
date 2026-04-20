@@ -1,7 +1,4 @@
-import Phaser from 'phaser';
 import { WeaponConfig, PassiveItemConfig } from '../../data/types';
-import { IWeapon } from '../../core/interfaces/IWeapon';
-import { IPassiveItem } from '../../core/interfaces/IPassiveItem';
 import { eventBus } from '../../core/events/EventBus';
 import { GameEventNames, XPCollectedEvent, PlayerLevelUpEvent } from '../../core/events/GameEvents';
 import { WeaponSystem, MAX_WEAPONS, MAX_PASSIVES } from '../weapons/WeaponSystem';

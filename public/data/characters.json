@@ -1,0 +1,38 @@
+[
+  {
+    "characterId": "char_swordsman",
+    "displayName": "劍客・蕭風",
+    "atlasFrame": "char-swordsman",
+    "baseHP": 100,
+    "baseMoveSpeed": 150,
+    "baseAttackPower": 1.0,
+    "basePickupRange": 50,
+    "startingWeaponId": "weapon_wind_sword",
+    "unlockedByDefault": true,
+    "unlockCost": 0
+  },
+  {
+    "characterId": "char_monk",
+    "displayName": "武僧・空見",
+    "atlasFrame": "char-monk",
+    "baseHP": 130,
+    "baseMoveSpeed": 130,
+    "baseAttackPower": 0.9,
+    "basePickupRange": 45,
+    "startingWeaponId": "weapon_drunk_fist",
+    "unlockedByDefault": false,
+    "unlockCost": 500
+  },
+  {
+    "characterId": "char_assassin",
+    "displayName": "刺客・夜影",
+    "atlasFrame": "char-assassin",
+    "baseHP": 70,
+    "baseMoveSpeed": 180,
+    "baseAttackPower": 1.2,
+    "basePickupRange": 60,
+    "startingWeaponId": "weapon_hidden_rain",
+    "unlockedByDefault": false,
+    "unlockCost": 800
+  }
+]

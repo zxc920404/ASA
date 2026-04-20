@@ -10,10 +10,8 @@ export class Projectile implements PoolableObject {
   private lifetime: number = 0;
   private maxLifetime: number = 1;
   private isActive: boolean = false;
-  private scene: Phaser.Scene;
 
   constructor(scene: Phaser.Scene) {
-    this.scene = scene;
     this.sprite = scene.add.sprite(0, 0, 'projectile');
     this.sprite.setVisible(false);
     this.sprite.setActive(false);

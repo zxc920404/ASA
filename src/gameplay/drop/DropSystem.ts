@@ -11,11 +11,8 @@ export class XPGem implements PoolableObject {
   readonly sprite: Phaser.GameObjects.Sprite;
   xpValue: number = 1;
   private isActive: boolean = false;
-  private attracted: boolean = false;
-  private scene: Phaser.Scene;
 
   constructor(scene: Phaser.Scene) {
-    this.scene = scene;
     this.sprite = scene.add.sprite(0, 0, 'xp_gem');
     this.sprite.setVisible(false);
     this.sprite.setActive(false);
@@ -27,7 +24,6 @@ export class XPGem implements PoolableObject {
 
   activate(x: number, y: number, xpValue: number = 1): void {
     this.isActive = true;
-    this.attracted = false;
     this.xpValue = xpValue;
     this.sprite.setPosition(x, y);
     this.sprite.setVisible(true);
@@ -37,7 +33,6 @@ export class XPGem implements PoolableObject {
 
   deactivate(): void {
     this.isActive = false;
-    this.attracted = false;
     this.sprite.setVisible(false);
     this.sprite.setActive(false);
     (this.sprite.body as Phaser.Physics.Arcade.Body).enable = false;
@@ -47,7 +42,6 @@ export class XPGem implements PoolableObject {
   /** Attract toward player */
   attractTo(px: number, py: number, speed: number): void {
     if (!this.isActive) return;
-    this.attracted = true;
     const dx = px - this.sprite.x;
     const dy = py - this.sprite.y;
     const dist = Math.sqrt(dx * dx + dy * dy);

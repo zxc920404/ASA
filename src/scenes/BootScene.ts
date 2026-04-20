@@ -9,15 +9,15 @@ export class BootScene extends Phaser.Scene {
     this.createLoadingBar();
     this.generatePlaceholderTextures();
 
-    // JSON configs are imported directly via ES modules in GameScene,
-    // so no need to load them via Phaser loader.
-    // We still store them in cache for scenes that read from cache.
-    import('../data/weapons.json').then(m => this.cache.json.add('weapons-config', m.default));
-    import('../data/enemies.json').then(m => this.cache.json.add('enemies-config', m.default));
-    import('../data/characters.json').then(m => this.cache.json.add('characters-config', m.default));
-    import('../data/waves.json').then(m => this.cache.json.add('waves-config', m.default));
-    import('../data/pool-config.json').then(m => this.cache.json.add('pool-config', m.default));
-    import('../data/passive-items.json').then(m => this.cache.json.add('passive-items-config', m.default));
+    // Use Phaser's native loader so the scene waits for all JSON to finish
+    // before calling create(). This prevents the race condition where
+    // create() transitions to MainMenu before data is cached.
+    this.load.json('weapons-config', 'data/weapons.json');
+    this.load.json('enemies-config', 'data/enemies.json');
+    this.load.json('characters-config', 'data/characters.json');
+    this.load.json('waves-config', 'data/waves.json');
+    this.load.json('pool-config', 'data/pool-config.json');
+    this.load.json('passive-items-config', 'data/passive-items.json');
   }
 
   create(): void {

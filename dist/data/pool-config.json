@@ -1,0 +1,11 @@
+{
+  "pools": [
+    { "poolId": "enemy_normal", "preAllocateCount": 50, "maxBatchExpansion": 10 },
+    { "poolId": "enemy_boss", "preAllocateCount": 2, "maxBatchExpansion": 1 },
+    { "poolId": "projectile", "preAllocateCount": 100, "maxBatchExpansion": 10 },
+    { "poolId": "xp_gem", "preAllocateCount": 80, "maxBatchExpansion": 10 },
+    { "poolId": "item_drop", "preAllocateCount": 20, "maxBatchExpansion": 5 },
+    { "poolId": "damage_text", "preAllocateCount": 30, "maxBatchExpansion": 10 },
+    { "poolId": "vfx", "preAllocateCount": 40, "maxBatchExpansion": 10 }
+  ]
+}

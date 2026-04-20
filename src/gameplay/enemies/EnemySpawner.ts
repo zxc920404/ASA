@@ -11,7 +11,6 @@ const OFFSCREEN_SKIP_THRESHOLD = 100;
 
 export class EnemySpawner {
   private scene: Phaser.Scene;
-  private poolManager: ObjectPoolManager;
   private enemyPool!: ObjectPool<EnemyBase>;
   private playerPos: Phaser.Math.Vector2;
   private activeEnemies: Set<EnemyBase> = new Set();
@@ -25,7 +24,6 @@ export class EnemySpawner {
     enemyConfigs: EnemyConfig[],
   ) {
     this.scene = scene;
-    this.poolManager = poolManager;
     this.playerPos = playerPos;
 
     for (const cfg of enemyConfigs) {
@@ -45,18 +43,17 @@ export class EnemySpawner {
     );
 
     // Listen for enemy killed to despawn
-    eventBus.on(GameEventNames.ENEMY_KILLED, (e: { enemyId: string; position: { x: number; y: number } }) => {
+    eventBus.on(GameEventNames.ENEMY_KILLED, (_e: { enemyId: string; position: { x: number; y: number } }) => {
       this.despawnDeadEnemies();
     });
   }
 
   get activeCount(): number { return this.activeEnemies.size; }
 
-  spawnEnemies(enemyTypes: string[], count: number, statMultiplier: number): void {
+  spawnEnemies(_enemyTypes: string[], count: number, statMultiplier: number): void {
     for (let i = 0; i < count; i++) {
       if (this.activeEnemies.size >= MAX_ENEMIES) return;
 
-      const typeId = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
       const pos = this.getSpawnPosition();
       const enemy = this.enemyPool.spawn(pos.x, pos.y, statMultiplier);
       enemy.setTarget(this.playerPos);
