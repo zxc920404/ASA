@@ -41,7 +41,9 @@ export class LevelUpSystem {
 
   addXP(amount: number): void {
     this.currentXP += amount;
-    while (this.currentXP >= this.xpToNextLevel) {
+    // Only trigger one level-up at a time; remaining XP will trigger next level
+    // after the player picks an option and the game resumes
+    if (this.currentXP >= this.xpToNextLevel) {
       this.currentXP -= this.xpToNextLevel;
       this.currentLevel++;
       this.xpToNextLevel = this.calculateXPThreshold(this.currentLevel);
@@ -50,8 +52,31 @@ export class LevelUpSystem {
       eventBus.emit(GameEventNames.PLAYER_LEVEL_UP, evt);
 
       const options = this.generateOptions(3);
-      this.onLevelUp(options);
+      if (options.length > 0) {
+        this.onLevelUp(options);
+      }
+      // If no options available, just skip the level-up UI
     }
+  }
+
+  /** Called after player picks an option — check if there's another pending level-up */
+  checkPendingLevelUp(): void {
+    if (this.currentXP >= this.xpToNextLevel) {
+      this.currentXP -= this.xpToNextLevel;
+      this.currentLevel++;
+      this.xpToNextLevel = this.calculateXPThreshold(this.currentLevel);
+
+      const evt: PlayerLevelUpEvent = { newLevel: this.currentLevel };
+      eventBus.emit(GameEventNames.PLAYER_LEVEL_UP, evt);
+
+      const options = this.generateOptions(3);
+      if (options.length > 0) {
+        this.onLevelUp(options);
+        return;
+      }
+    }
+    // No more pending level-ups — signal to resume game
+    this.onLevelUp([]);
   }
 
   generateOptions(count: number): LevelUpOption[] {

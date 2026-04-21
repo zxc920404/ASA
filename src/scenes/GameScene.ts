@@ -65,6 +65,7 @@ export class GameScene extends Phaser.Scene {
 
   // Level-up UI
   private levelUpPanel?: Phaser.GameObjects.Container;
+  private levelUpPanelObjects: Phaser.GameObjects.GameObject[] = [];
   // End screen UI
   private endScreenPanel?: Phaser.GameObjects.Container;
 
@@ -298,44 +299,69 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showLevelUpUI(options: LevelUpOption[]): void {
+    // Empty options = no more pending level-ups, resume game
+    if (options.length === 0) {
+      this.closeLevelUpUI();
+      return;
+    }
+
     this.gameState = GameState.LevelUp;
     this.physics.pause();
+
+    // Clean up any existing panel first
+    this.closeLevelUpObjects();
 
     const cx = this.cameras.main.width / 2;
     const cy = this.cameras.main.height / 2;
 
-    this.levelUpPanel = this.add.container(0, 0).setScrollFactor(0).setDepth(200);
+    this.levelUpPanelObjects = [];
 
-    // Dim overlay
-    const overlay = this.add.rectangle(cx, cy, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.6);
-    this.levelUpPanel.add(overlay);
+    // Dim overlay at depth 200
+    const overlay = this.add.rectangle(cx, cy, this.cameras.main.width, this.cameras.main.height, 0x000000, 0.6)
+      .setScrollFactor(0).setDepth(200).setInteractive();
+    this.levelUpPanelObjects.push(overlay);
 
-    // Title
+    // Title at depth 201
     const title = this.add.text(cx, cy - 120, `升級！Lv ${this.levelUpSystem.currentLevel}`, {
       fontSize: '24px', color: '#ffff00', align: 'center',
-    }).setOrigin(0.5).setScrollFactor(0);
-    this.levelUpPanel.add(title);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+    this.levelUpPanelObjects.push(title);
 
-    // Option buttons
+    // Option buttons at depth 202+
     options.forEach((opt, i) => {
       const y = cy - 40 + i * 70;
       const bg = this.add.rectangle(cx, y, 300, 56, 0x333366, 0.9)
-        .setInteractive({ useHandCursor: true })
-        .setScrollFactor(0);
+        .setStrokeStyle(1, 0x6666aa)
+        .setScrollFactor(0).setDepth(202)
+        .setInteractive({ useHandCursor: true });
       const txt = this.add.text(cx, y, `${opt.displayName}\n${opt.description}`, {
         fontSize: '14px', color: '#ffffff', align: 'center',
-      }).setOrigin(0.5).setScrollFactor(0);
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(203);
 
+      bg.on('pointerover', () => bg.setFillStyle(0x4444aa, 1));
+      bg.on('pointerout', () => bg.setFillStyle(0x333366, 0.9));
       bg.on('pointerdown', () => {
         this.levelUpSystem.applyOption(opt);
-        this.closeLevelUpUI();
+        this.closeLevelUpObjects();
+        // Check if there's another pending level-up
+        this.levelUpSystem.checkPendingLevelUp();
       });
 
-      this.levelUpPanel!.add([bg, txt]);
+      this.levelUpPanelObjects.push(bg, txt);
     });
   }
 
+  private closeLevelUpObjects(): void {
+    if (this.levelUpPanelObjects) {
+      for (const obj of this.levelUpPanelObjects) {
+        obj.destroy();
+      }
+      this.levelUpPanelObjects = [];
+    }
+  }
+
   private closeLevelUpUI(): void {
+    this.closeLevelUpObjects();
     if (this.levelUpPanel) {
       this.levelUpPanel.destroy(true);
       this.levelUpPanel = undefined;
