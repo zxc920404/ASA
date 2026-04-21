@@ -4,7 +4,7 @@ import { GameEventNames } from '../../core/events/GameEvents';
 
 export class PauseMenuUI {
   private scene: Phaser.Scene;
-  private container: Phaser.GameObjects.Container | null = null;
+  private panelObjects: Phaser.GameObjects.GameObject[] = [];
   private pauseButton!: Phaser.GameObjects.Text;
   private escKey: Phaser.Input.Keyboard.Key | null = null;
   private isPaused: boolean = false;
@@ -38,7 +38,6 @@ export class PauseMenuUI {
     }
   }
 
-  /** Create the pause button in the top-right corner */
   private createPauseButton(): void {
     const cam = this.scene.cameras.main;
     this.pauseButton = this.scene.add.text(cam.width - 16, 12, '⏸', {
@@ -51,12 +50,6 @@ export class PauseMenuUI {
       .setScrollFactor(0)
       .setDepth(150)
       .setInteractive({ useHandCursor: true });
-
-    // Ensure minimum touch area of 48x48
-    this.pauseButton.setInteractive(
-      new Phaser.Geom.Rectangle(-10, -6, 48, 48),
-      Phaser.Geom.Rectangle.Contains,
-    );
 
     this.pauseButton.on('pointerdown', () => this.toggle());
     this.pauseButton.on('pointerover', () => this.pauseButton.setAlpha(0.7));
@@ -100,22 +93,23 @@ export class PauseMenuUI {
     const cx = width / 2;
     const cy = height / 2;
 
-    this.container = this.scene.add.container(0, 0).setScrollFactor(0).setDepth(500);
-
-    // Dim overlay — blocks clicks to game objects behind it
+    // Overlay at depth 500 — blocks clicks to game behind it
     const overlay = this.scene.add.rectangle(cx, cy, width, height, 0x000000, 0.7)
+      .setScrollFactor(0)
+      .setDepth(500)
       .setInteractive();
-    this.container.add(overlay);
+    // Clicking overlay does nothing (just blocks)
+    this.panelObjects.push(overlay);
 
-    // Title
+    // Title at depth 501
     const title = this.scene.add.text(cx, cy - 100, '⏸ 暫停', {
       fontSize: '32px',
       color: '#ffffff',
       fontStyle: 'bold',
-    }).setOrigin(0.5);
-    this.container.add(title);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(501);
+    this.panelObjects.push(title);
 
-    // Buttons — each added individually so they sit on top of the overlay
+    // Buttons at depth 502 — higher than overlay so they receive clicks
     const buttonDefs = [
       { text: '▶  繼續遊戲', action: () => this.resume() },
       { text: '🔄  重新開始', action: () => { this.hidePanel(); this.onRestart(); } },
@@ -126,18 +120,16 @@ export class PauseMenuUI {
       const y = cy - 20 + i * 60;
 
       const bg = this.scene.add.rectangle(cx, y, 240, 48, 0x333366, 0.9)
-        .setStrokeStyle(1, 0x6666aa);
-      this.container!.add(bg);
+        .setStrokeStyle(1, 0x6666aa)
+        .setScrollFactor(0)
+        .setDepth(502)
+        .setInteractive({ useHandCursor: true });
 
       const label = this.scene.add.text(cx, y, btn.text, {
         fontSize: '20px',
         color: '#ddddff',
-      }).setOrigin(0.5);
-      this.container!.add(label);
+      }).setOrigin(0.5).setScrollFactor(0).setDepth(503);
 
-      // Make the button interactive — must be added AFTER being placed in the container
-      // so it renders on top of the overlay
-      bg.setInteractive({ useHandCursor: true });
       bg.on('pointerover', () => {
         bg.setFillStyle(0x4444aa, 1);
         label.setColor('#ffffff');
@@ -146,18 +138,17 @@ export class PauseMenuUI {
         bg.setFillStyle(0x333366, 0.9);
         label.setColor('#ddddff');
       });
-      bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-        pointer.event.stopPropagation();
-        btn.action();
-      });
+      bg.on('pointerdown', () => btn.action());
+
+      this.panelObjects.push(bg, label);
     });
   }
 
   private hidePanel(): void {
-    if (this.container) {
-      this.container.destroy(true);
-      this.container = null;
+    for (const obj of this.panelObjects) {
+      obj.destroy();
     }
+    this.panelObjects = [];
   }
 
   destroy(): void {
