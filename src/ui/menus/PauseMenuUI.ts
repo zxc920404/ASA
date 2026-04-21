@@ -5,12 +5,12 @@ import { GameEventNames } from '../../core/events/GameEvents';
 export class PauseMenuUI {
   private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container | null = null;
+  private pauseButton!: Phaser.GameObjects.Text;
   private escKey: Phaser.Input.Keyboard.Key | null = null;
   private isPaused: boolean = false;
   private onResume: () => void;
   private onRestart: () => void;
   private onMainMenu: () => void;
-
   private onPause: (() => void) | undefined;
 
   constructor(
@@ -28,6 +28,7 @@ export class PauseMenuUI {
     this.onMainMenu = callbacks.onMainMenu;
     this.onPause = callbacks.onPause;
     this.setupInput();
+    this.createPauseButton();
   }
 
   private setupInput(): void {
@@ -35,6 +36,31 @@ export class PauseMenuUI {
       this.escKey = this.scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
       this.escKey.on('down', () => this.toggle());
     }
+  }
+
+  /** Create the pause button in the top-right corner */
+  private createPauseButton(): void {
+    const cam = this.scene.cameras.main;
+    this.pauseButton = this.scene.add.text(cam.width - 16, 12, '⏸', {
+      fontSize: '28px',
+      color: '#ffffff',
+      backgroundColor: '#00000066',
+      padding: { x: 10, y: 6 },
+    })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(150)
+      .setInteractive({ useHandCursor: true });
+
+    // Ensure minimum touch area of 48x48
+    this.pauseButton.setInteractive(
+      new Phaser.Geom.Rectangle(-10, -6, 48, 48),
+      Phaser.Geom.Rectangle.Contains,
+    );
+
+    this.pauseButton.on('pointerdown', () => this.toggle());
+    this.pauseButton.on('pointerover', () => this.pauseButton.setAlpha(0.7));
+    this.pauseButton.on('pointerout', () => this.pauseButton.setAlpha(1));
   }
 
   toggle(): void {
@@ -50,6 +76,7 @@ export class PauseMenuUI {
     this.isPaused = true;
     this.scene.physics.pause();
     this.onPause?.();
+    this.pauseButton.setVisible(false);
     this.showPanel();
     eventBus.emit(GameEventNames.GAME_PAUSED, {});
   }
@@ -58,6 +85,7 @@ export class PauseMenuUI {
     if (!this.isPaused) return;
     this.isPaused = false;
     this.hidePanel();
+    this.pauseButton.setVisible(true);
     this.scene.physics.resume();
     this.onResume();
     eventBus.emit(GameEventNames.GAME_RESUMED, {});
@@ -74,9 +102,9 @@ export class PauseMenuUI {
 
     this.container = this.scene.add.container(0, 0).setScrollFactor(0).setDepth(500);
 
-    // Dim overlay
-    const overlay = this.scene.add.rectangle(cx, cy, width, height, 0x000000, 0.7);
-    overlay.setInteractive(); // Block clicks through
+    // Dim overlay — blocks clicks to game objects behind it
+    const overlay = this.scene.add.rectangle(cx, cy, width, height, 0x000000, 0.7)
+      .setInteractive();
     this.container.add(overlay);
 
     // Title
@@ -87,28 +115,41 @@ export class PauseMenuUI {
     }).setOrigin(0.5);
     this.container.add(title);
 
-    // Buttons
-    const buttons = [
+    // Buttons — each added individually so they sit on top of the overlay
+    const buttonDefs = [
       { text: '▶  繼續遊戲', action: () => this.resume() },
       { text: '🔄  重新開始', action: () => { this.hidePanel(); this.onRestart(); } },
       { text: '🏠  返回主選單', action: () => { this.hidePanel(); this.onMainMenu(); } },
     ];
 
-    buttons.forEach((btn, i) => {
+    buttonDefs.forEach((btn, i) => {
       const y = cy - 20 + i * 60;
+
       const bg = this.scene.add.rectangle(cx, y, 240, 48, 0x333366, 0.9)
-        .setStrokeStyle(1, 0x6666aa)
-        .setInteractive({ useHandCursor: true });
+        .setStrokeStyle(1, 0x6666aa);
+      this.container!.add(bg);
+
       const label = this.scene.add.text(cx, y, btn.text, {
         fontSize: '20px',
         color: '#ddddff',
       }).setOrigin(0.5);
+      this.container!.add(label);
 
-      bg.on('pointerover', () => bg.setFillStyle(0x4444aa, 1));
-      bg.on('pointerout', () => bg.setFillStyle(0x333366, 0.9));
-      bg.on('pointerdown', btn.action);
-
-      this.container!.add([bg, label]);
+      // Make the button interactive — must be added AFTER being placed in the container
+      // so it renders on top of the overlay
+      bg.setInteractive({ useHandCursor: true });
+      bg.on('pointerover', () => {
+        bg.setFillStyle(0x4444aa, 1);
+        label.setColor('#ffffff');
+      });
+      bg.on('pointerout', () => {
+        bg.setFillStyle(0x333366, 0.9);
+        label.setColor('#ddddff');
+      });
+      bg.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+        pointer.event.stopPropagation();
+        btn.action();
+      });
     });
   }
 
@@ -123,6 +164,9 @@ export class PauseMenuUI {
     this.hidePanel();
     if (this.escKey) {
       this.escKey.removeAllListeners();
+    }
+    if (this.pauseButton) {
+      this.pauseButton.destroy();
     }
   }
 }
