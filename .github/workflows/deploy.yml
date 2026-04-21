@@ -28,7 +28,7 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm install
+      - run: npm ci
 
       - run: npx vite build --mode gh-pages
 
