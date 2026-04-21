@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Unity folders (not needed for web game)
+Library/
+Logs/
+Temp/
+obj/
+Build/
+Builds/
+UserSettings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+
+# Environment
+.env
+.env.local
+
+# Capacitor
+android/
+ios/
