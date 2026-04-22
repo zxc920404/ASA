@@ -38,15 +38,9 @@ const config: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(config);
 
-// Re-create game on orientation change to adapt to new ratio
+// Reload page on orientation change to get correct dimensions
 window.addEventListener('orientationchange', () => {
-  setTimeout(() => {
-    const newW = window.innerWidth;
-    const newH = window.innerHeight;
-    const newRatio = newW / newH;
-    const w = newRatio >= 1 ? Math.round(SHORT_SIDE * newRatio) : SHORT_SIDE;
-    const h = newRatio >= 1 ? SHORT_SIDE : Math.round(SHORT_SIDE / newRatio);
-    game.scale.resize(w, h);
-    game.scale.refresh();
-  }, 300); // Delay to let browser finish rotation
+  setTimeout(() => window.location.reload(), 200);
 });
+
+void game;
