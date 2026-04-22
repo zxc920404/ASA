@@ -361,7 +361,7 @@ export class MainMenuScene extends Phaser.Scene {
   private addBackButton(): void {
     const w = this.scale.width;
     const h = this.scale.height;
-    const back = this.createButton(w / 2, h * 0.9, '← 返回', () => this.showMainMenu(), 140);
+    const back = this.createButton(w / 2, h * 0.82, '← 返回', () => this.showMainMenu(), 140);
     this.panelContainer.add(back);
   }
 
