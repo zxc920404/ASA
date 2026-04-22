@@ -6,12 +6,11 @@ import { GameScene } from './scenes/GameScene';
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   scale: {
-    mode: Phaser.Scale.FIT,
+    mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: 1280,
-    height: 720,
-    min: { width: 640, height: 360 },
-    max: { width: 1920, height: 1080 },
+    width: '100%',
+    height: '100%',
+    parent: document.body,
   },
   physics: {
     default: 'arcade',
