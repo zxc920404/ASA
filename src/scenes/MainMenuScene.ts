@@ -19,56 +19,55 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   create(): void {
-    const { width, height } = this.scale;
+    const w = this.scale.width;
+    const h = this.scale.height;
 
-    // Initialize save & upgrade systems
     const provider = new LocalStorageSaveProvider();
     this.saveSystem = new SaveSystem(provider);
     this.upgradeSystem = new PermanentUpgradeSystem(this.saveSystem);
 
-    // Load settings from save
     const saveData = this.saveSystem.load();
     this.musicVolume = saveData.settings.musicVolume;
     this.sfxVolume = saveData.settings.sfxVolume;
 
-    // 背景漸層
+    // Background
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x1a0a2e, 0x1a0a2e, 0x16213e, 0x16213e, 1);
-    bg.fillRect(0, 0, width, height);
+    bg.fillRect(0, 0, w, h);
 
-    // 裝飾粒子（簡單的浮動方塊）
-    for (let i = 0; i < 20; i++) {
-      const px = Math.random() * width;
-      const py = Math.random() * height;
-      const size = 2 + Math.random() * 4;
+    // Particles
+    for (let i = 0; i < 15; i++) {
+      const px = Math.random() * w;
+      const py = Math.random() * h;
+      const size = 2 + Math.random() * 3;
       const particle = this.add.rectangle(px, py, size, size, 0xff4444, 0.15 + Math.random() * 0.15);
       this.tweens.add({
-        targets: particle, y: py - 40 - Math.random() * 60, alpha: 0,
+        targets: particle, y: py - 30 - Math.random() * 40, alpha: 0,
         duration: 3000 + Math.random() * 4000, repeat: -1, yoyo: true,
       });
     }
 
-    // 標題
-    this.add.text(width / 2, 60, '⚔ 小俠想要活下去', {
-      fontSize: '44px', color: '#ff4444', fontStyle: 'bold',
+    // Title
+    const titleSize = Math.min(w * 0.05, 36);
+    this.add.text(w / 2, h * 0.08, '⚔ 小俠想要活下去', {
+      fontSize: `${titleSize}px`, color: '#ff4444', fontStyle: 'bold',
     }).setOrigin(0.5);
 
-    // 副標題
-    this.add.text(width / 2, 110, 'Wuxia Survivors', {
-      fontSize: '18px', color: '#cc8888',
+    this.add.text(w / 2, h * 0.15, 'Wuxia Survivors', {
+      fontSize: `${Math.max(12, titleSize * 0.45)}px`, color: '#cc8888',
     }).setOrigin(0.5);
 
-    // 分隔線
+    // Divider
     const line = this.add.graphics();
     line.lineStyle(2, 0xff4444, 0.4);
-    line.lineBetween(width * 0.2, 140, width * 0.8, 140);
+    line.lineBetween(w * 0.25, h * 0.2, w * 0.75, h * 0.2);
 
     this.panelContainer = this.add.container(0, 0);
     this.showMainMenu();
 
-    // 版本號
-    this.add.text(width - 10, height - 10, `v${VERSION}`, {
-      fontSize: '12px', color: '#555555',
+    // Version
+    this.add.text(w - 8, h - 8, `v${VERSION}`, {
+      fontSize: '10px', color: '#555555',
     }).setOrigin(1, 1);
   }
 
@@ -76,25 +75,21 @@ export class MainMenuScene extends Phaser.Scene {
     this.panelContainer.removeAll(true);
   }
 
-  private createButton(x: number, y: number, text: string, onClick: () => void, width: number = 280): Phaser.GameObjects.Container {
+  private createButton(x: number, y: number, text: string, onClick: () => void, btnWidth: number = 220): Phaser.GameObjects.Container {
+    const btnHeight = 40;
     const container = this.add.container(x, y);
+    const fontSize = Math.max(14, Math.min(btnWidth * 0.08, 20));
 
-    const bg = this.add.rectangle(0, 0, width, 48, 0x2a1a4a, 0.9)
+    const bg = this.add.rectangle(0, 0, btnWidth, btnHeight, 0x2a1a4a, 0.9)
       .setStrokeStyle(1, 0x6644aa, 0.6);
     const label = this.add.text(0, 0, text, {
-      fontSize: '22px', color: '#ddddff',
+      fontSize: `${fontSize}px`, color: '#ddddff',
     }).setOrigin(0.5);
 
     container.add([bg, label]);
     bg.setInteractive({ useHandCursor: true });
-    bg.on('pointerover', () => {
-      bg.setFillStyle(0x4a2a7a, 1);
-      label.setColor('#ffffff');
-    });
-    bg.on('pointerout', () => {
-      bg.setFillStyle(0x2a1a4a, 0.9);
-      label.setColor('#ddddff');
-    });
+    bg.on('pointerover', () => { bg.setFillStyle(0x4a2a7a, 1); label.setColor('#ffffff'); });
+    bg.on('pointerout', () => { bg.setFillStyle(0x2a1a4a, 0.9); label.setColor('#ddddff'); });
     bg.on('pointerdown', onClick);
 
     return container;
@@ -102,8 +97,12 @@ export class MainMenuScene extends Phaser.Scene {
 
   private showMainMenu(): void {
     this.clearPanel();
-    const { width } = this.scale;
-    const cx = width / 2;
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const cx = w / 2;
+    const startY = h * 0.28;
+    const gap = h * 0.12;
+    const btnW = Math.min(w * 0.4, 260);
 
     const buttons = [
       { text: '▶  開始遊戲', cb: () => this.showMapSelect() },
@@ -113,54 +112,57 @@ export class MainMenuScene extends Phaser.Scene {
     ];
 
     buttons.forEach((btn, i) => {
-      const b = this.createButton(cx, 200 + i * 64, btn.text, btn.cb);
+      const b = this.createButton(cx, startY + i * gap, btn.text, btn.cb, btnW);
       this.panelContainer.add(b);
     });
 
-    // Gold display
     const gold = this.upgradeSystem.getGold();
-    const goldText = this.add.text(cx, 470, `🪙 金幣：${gold}`, {
-      fontSize: '16px', color: '#ffdd00',
+    const goldText = this.add.text(cx, startY + buttons.length * gap + 10, `🪙 金幣：${gold}`, {
+      fontSize: '14px', color: '#ffdd00',
     }).setOrigin(0.5);
     this.panelContainer.add(goldText);
 
-    // 當前選擇提示
-    const info = this.add.text(cx, 500, `角色：${this.getCharName()} | 地圖：${this.getMapName()}`, {
-      fontSize: '14px', color: '#888899',
+    const info = this.add.text(cx, startY + buttons.length * gap + 30, `角色：${this.getCharName()} | 地圖：${this.getMapName()}`, {
+      fontSize: '12px', color: '#888899',
     }).setOrigin(0.5);
     this.panelContainer.add(info);
   }
 
   private showCharacterSelect(): void {
     this.clearPanel();
-    const { width } = this.scale;
-    const cx = width / 2;
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const cx = w / 2;
+    const cardW = Math.min(w * 0.55, 320);
 
-    const title = this.add.text(cx, 170, '👤 角色選擇', {
-      fontSize: '28px', color: '#ddddff',
+    const title = this.add.text(cx, h * 0.22, '👤 角色選擇', {
+      fontSize: '22px', color: '#ddddff',
     }).setOrigin(0.5);
     this.panelContainer.add(title);
 
     const characters = [
-      { id: 'char_swordsman', name: '劍客・蕭風', desc: 'HP 100 | 攻擊 1.0x | 初始武器：追風劍', color: 0x4488ff },
-      { id: 'char_monk', name: '武僧・空見', desc: 'HP 130 | 攻擊 0.9x | 初始武器：醉拳', color: 0xffaa44 },
-      { id: 'char_assassin', name: '刺客・夜影', desc: 'HP 70 | 速度快 | 初始武器：暗器雨', color: 0x44ff88 },
+      { id: 'char_swordsman', name: '劍客・蕭風', desc: 'HP 100 | 攻擊 1.0x', color: 0x4488ff },
+      { id: 'char_monk', name: '武僧・空見', desc: 'HP 130 | 攻擊 0.9x', color: 0xffaa44 },
+      { id: 'char_assassin', name: '刺客・夜影', desc: 'HP 70 | 速度快', color: 0x44ff88 },
     ];
 
+    const startY = h * 0.34;
+    const cardGap = h * 0.15;
+
     characters.forEach((ch, i) => {
-      const y = 230 + i * 80;
+      const y = startY + i * cardGap;
       const selected = ch.id === this.selectedCharacterId;
 
-      const cardBg = this.add.rectangle(cx, y, 340, 64, selected ? 0x3a2a6a : 0x1a1a3a, 0.9)
+      const cardBg = this.add.rectangle(cx, y, cardW, 50, selected ? 0x3a2a6a : 0x1a1a3a, 0.9)
         .setStrokeStyle(2, selected ? 0xffdd00 : 0x333355, selected ? 1 : 0.5)
         .setInteractive({ useHandCursor: true });
 
-      const icon = this.add.rectangle(cx - 140, y, 32, 32, ch.color);
-      const name = this.add.text(cx - 110, y - 12, `${selected ? '✓ ' : ''}${ch.name}`, {
-        fontSize: '18px', color: selected ? '#ffdd00' : '#ffffff',
+      const icon = this.add.rectangle(cx - cardW * 0.4, y, 24, 24, ch.color);
+      const name = this.add.text(cx - cardW * 0.3, y - 10, `${selected ? '✓ ' : ''}${ch.name}`, {
+        fontSize: '15px', color: selected ? '#ffdd00' : '#ffffff',
       });
-      const desc = this.add.text(cx - 110, y + 10, ch.desc, {
-        fontSize: '12px', color: '#999999',
+      const desc = this.add.text(cx - cardW * 0.3, y + 8, ch.desc, {
+        fontSize: '11px', color: '#999999',
       });
 
       cardBg.on('pointerdown', () => {
@@ -176,11 +178,13 @@ export class MainMenuScene extends Phaser.Scene {
 
   private showMapSelect(): void {
     this.clearPanel();
-    const { width } = this.scale;
-    const cx = width / 2;
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const cx = w / 2;
+    const cardW = Math.min(w * 0.55, 320);
 
-    const title = this.add.text(cx, 170, '🗺 選擇地圖', {
-      fontSize: '28px', color: '#ddddff',
+    const title = this.add.text(cx, h * 0.22, '🗺 選擇地圖', {
+      fontSize: '22px', color: '#ddddff',
     }).setOrigin(0.5);
     this.panelContainer.add(title);
 
@@ -190,19 +194,19 @@ export class MainMenuScene extends Phaser.Scene {
     ];
 
     maps.forEach((m, i) => {
-      const y = 240 + i * 90;
+      const y = h * 0.38 + i * (h * 0.16);
       const selected = m.id === this.selectedMapId;
 
-      const cardBg = this.add.rectangle(cx, y, 340, 70, selected ? 0x3a2a6a : 0x1a1a3a, 0.9)
+      const cardBg = this.add.rectangle(cx, y, cardW, 56, selected ? 0x3a2a6a : 0x1a1a3a, 0.9)
         .setStrokeStyle(2, selected ? 0xffdd00 : 0x333355, selected ? 1 : 0.5)
         .setInteractive({ useHandCursor: true });
 
-      const preview = this.add.rectangle(cx - 130, y, 48, 48, m.color);
-      const name = this.add.text(cx - 90, y - 14, m.name, {
-        fontSize: '20px', color: selected ? '#ffdd00' : '#ffffff',
+      const preview = this.add.rectangle(cx - cardW * 0.38, y, 36, 36, m.color);
+      const name = this.add.text(cx - cardW * 0.25, y - 10, m.name, {
+        fontSize: '16px', color: selected ? '#ffdd00' : '#ffffff',
       });
-      const desc = this.add.text(cx - 90, y + 12, m.desc, {
-        fontSize: '13px', color: '#999999',
+      const desc = this.add.text(cx - cardW * 0.25, y + 10, m.desc, {
+        fontSize: '11px', color: '#999999',
       });
 
       cardBg.on('pointerdown', () => {
@@ -213,8 +217,7 @@ export class MainMenuScene extends Phaser.Scene {
       this.panelContainer.add([cardBg, preview, name, desc]);
     });
 
-    // 開始遊戲按鈕
-    const startBtn = this.createButton(cx, 460, '⚔  開始戰鬥！', () => this.startGame(), 240);
+    const startBtn = this.createButton(cx, h * 0.76, '⚔  開始戰鬥！', () => this.startGame(), Math.min(w * 0.35, 200));
     this.panelContainer.add(startBtn);
 
     this.addBackButton();
@@ -222,55 +225,55 @@ export class MainMenuScene extends Phaser.Scene {
 
   private showPermanentUpgrades(): void {
     this.clearPanel();
-    const { width } = this.scale;
-    const cx = width / 2;
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const cx = w / 2;
+    const cardW = Math.min(w * 0.6, 340);
 
-    const title = this.add.text(cx, 160, '💎 永久升級', {
-      fontSize: '28px', color: '#ffdd00',
+    const title = this.add.text(cx, h * 0.18, '💎 永久升級', {
+      fontSize: '22px', color: '#ffdd00',
     }).setOrigin(0.5);
     this.panelContainer.add(title);
 
-    // Gold display
     const gold = this.upgradeSystem.getGold();
-    const goldLabel = this.add.text(cx, 195, `🪙 ${gold}`, {
-      fontSize: '18px', color: '#ffdd00',
+    const goldLabel = this.add.text(cx, h * 0.25, `🪙 ${gold}`, {
+      fontSize: '15px', color: '#ffdd00',
     }).setOrigin(0.5);
     this.panelContainer.add(goldLabel);
 
     const levels = this.upgradeSystem.getUpgradeLevels();
+    const startY = h * 0.32;
+    const itemGap = h * 0.11;
 
     PERMANENT_UPGRADES.forEach((upgrade, i) => {
-      const y = 235 + i * 62;
+      const y = startY + i * itemGap;
       const level = levels[i] ?? 0;
       const maxed = level >= upgrade.maxLevel;
       const cost = this.upgradeSystem.getNextCost(i);
       const canBuy = this.upgradeSystem.canPurchase(i);
 
-      // Card background
-      const cardBg = this.add.rectangle(cx, y, 360, 52, 0x1a1a3a, 0.9)
+      const cardBg = this.add.rectangle(cx, y, cardW, 44, 0x1a1a3a, 0.9)
         .setStrokeStyle(1, maxed ? 0x44aa44 : 0x333355);
       this.panelContainer.add(cardBg);
 
-      // Upgrade name & level
-      const nameText = this.add.text(cx - 160, y - 12, `${upgrade.displayName}`, {
-        fontSize: '16px', color: maxed ? '#44ff44' : '#ffffff',
+      const nameText = this.add.text(cx - cardW * 0.44, y - 9, upgrade.displayName, {
+        fontSize: '13px', color: maxed ? '#44ff44' : '#ffffff',
       });
       this.panelContainer.add(nameText);
 
-      const descText = this.add.text(cx - 160, y + 8, `${upgrade.description} (Lv ${level}/${upgrade.maxLevel})`, {
-        fontSize: '12px', color: '#999999',
+      const descText = this.add.text(cx - cardW * 0.44, y + 7, `${upgrade.description} (Lv ${level}/${upgrade.maxLevel})`, {
+        fontSize: '10px', color: '#999999',
       });
       this.panelContainer.add(descText);
 
-      // Buy button
       if (!maxed && cost !== null) {
         const btnColor = canBuy ? 0x336633 : 0x333333;
         const btnTextColor = canBuy ? '#ffffff' : '#666666';
-        const buyBtn = this.add.rectangle(cx + 130, y, 80, 36, btnColor, 0.9)
+        const buyBtn = this.add.rectangle(cx + cardW * 0.35, y, 64, 30, btnColor, 0.9)
           .setStrokeStyle(1, canBuy ? 0x44aa44 : 0x444444)
           .setInteractive({ useHandCursor: canBuy });
-        const buyLabel = this.add.text(cx + 130, y, `${cost} 🪙`, {
-          fontSize: '13px', color: btnTextColor,
+        const buyLabel = this.add.text(cx + cardW * 0.35, y, `${cost} 🪙`, {
+          fontSize: '11px', color: btnTextColor,
         }).setOrigin(0.5);
 
         if (canBuy) {
@@ -278,14 +281,13 @@ export class MainMenuScene extends Phaser.Scene {
           buyBtn.on('pointerout', () => buyBtn.setFillStyle(0x336633, 0.9));
           buyBtn.on('pointerdown', () => {
             this.upgradeSystem.purchase(i);
-            this.showPermanentUpgrades(); // Refresh
+            this.showPermanentUpgrades();
           });
         }
-
         this.panelContainer.add([buyBtn, buyLabel]);
       } else if (maxed) {
-        const maxLabel = this.add.text(cx + 130, y, 'MAX', {
-          fontSize: '14px', color: '#44ff44',
+        const maxLabel = this.add.text(cx + cardW * 0.35, y, 'MAX', {
+          fontSize: '12px', color: '#44ff44',
         }).setOrigin(0.5);
         this.panelContainer.add(maxLabel);
       }
@@ -296,19 +298,20 @@ export class MainMenuScene extends Phaser.Scene {
 
   private showSettings(): void {
     this.clearPanel();
-    const { width } = this.scale;
-    const cx = width / 2;
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const cx = w / 2;
 
-    const title = this.add.text(cx, 170, '⚙ 設定', {
-      fontSize: '28px', color: '#ddddff',
+    const title = this.add.text(cx, h * 0.25, '⚙ 設定', {
+      fontSize: '22px', color: '#ddddff',
     }).setOrigin(0.5);
     this.panelContainer.add(title);
 
-    this.createSlider(cx, 260, '🎵 音樂音量', this.musicVolume, (v) => {
+    this.createSlider(cx, h * 0.42, '🎵 音樂音量', this.musicVolume, (v) => {
       this.musicVolume = v;
       this.saveSettings();
     });
-    this.createSlider(cx, 340, '🔊 音效音量', this.sfxVolume, (v) => {
+    this.createSlider(cx, h * 0.58, '🔊 音效音量', this.sfxVolume, (v) => {
       this.sfxVolume = v;
       this.saveSettings();
     });
@@ -324,40 +327,41 @@ export class MainMenuScene extends Phaser.Scene {
   }
 
   private createSlider(cx: number, y: number, label: string, value: number, onChange: (v: number) => void): void {
-    const sliderWidth = 220;
+    const sliderWidth = Math.min(this.scale.width * 0.35, 200);
     const sliderX = cx - sliderWidth / 2;
 
-    const labelText = this.add.text(cx, y - 22, `${label}: ${Math.round(value * 100)}%`, {
-      fontSize: '18px', color: '#ccccdd',
+    const labelText = this.add.text(cx, y - 18, `${label}: ${Math.round(value * 100)}%`, {
+      fontSize: '15px', color: '#ccccdd',
     }).setOrigin(0.5);
     this.panelContainer.add(labelText);
 
-    const trackBg = this.add.rectangle(cx, y + 5, sliderWidth, 8, 0x333355, 0.8).setStrokeStyle(1, 0x555577);
+    const trackBg = this.add.rectangle(cx, y + 4, sliderWidth, 6, 0x333355, 0.8).setStrokeStyle(1, 0x555577);
     this.panelContainer.add(trackBg);
 
     const fillWidth = sliderWidth * value;
-    const fill = this.add.rectangle(sliderX + fillWidth / 2, y + 5, fillWidth, 8, 0x6644aa);
+    const fill = this.add.rectangle(sliderX + fillWidth / 2, y + 4, fillWidth, 6, 0x6644aa);
     this.panelContainer.add(fill);
 
-    const thumb = this.add.circle(sliderX + sliderWidth * value, y + 5, 12, 0xddddff);
-    thumb.setInteractive(new Phaser.Geom.Circle(0, 0, 12), Phaser.Geom.Circle.Contains);
+    const thumb = this.add.circle(sliderX + sliderWidth * value, y + 4, 10, 0xddddff);
+    thumb.setInteractive(new Phaser.Geom.Circle(0, 0, 10), Phaser.Geom.Circle.Contains);
     this.input.setDraggable(thumb);
     this.panelContainer.add(thumb);
 
     thumb.on('drag', (_pointer: Phaser.Input.Pointer, dragX: number) => {
       const clamped = Phaser.Math.Clamp(dragX, sliderX, sliderX + sliderWidth);
-      thumb.setPosition(clamped, y + 5);
+      thumb.setPosition(clamped, y + 4);
       const newVal = (clamped - sliderX) / sliderWidth;
       onChange(newVal);
       labelText.setText(`${label}: ${Math.round(newVal * 100)}%`);
-      fill.setSize(sliderWidth * newVal, 8);
-      fill.setPosition(sliderX + (sliderWidth * newVal) / 2, y + 5);
+      fill.setSize(sliderWidth * newVal, 6);
+      fill.setPosition(sliderX + (sliderWidth * newVal) / 2, y + 4);
     });
   }
 
   private addBackButton(): void {
-    const { width, height } = this.scale;
-    const back = this.createButton(width / 2, height - 70, '← 返回', () => this.showMainMenu(), 160);
+    const w = this.scale.width;
+    const h = this.scale.height;
+    const back = this.createButton(w / 2, h * 0.9, '← 返回', () => this.showMainMenu(), 140);
     this.panelContainer.add(back);
   }
 
