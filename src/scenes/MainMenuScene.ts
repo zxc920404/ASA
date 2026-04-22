@@ -30,6 +30,17 @@ export class MainMenuScene extends Phaser.Scene {
     this.musicVolume = saveData.settings.musicVolume;
     this.sfxVolume = saveData.settings.sfxVolume;
 
+    this.drawBackground(w, h);
+    this.panelContainer = this.add.container(0, 0);
+    this.showMainMenu();
+
+    // Redraw on resize (orientation change, browser UI toggle)
+    this.scale.on('resize', (gameSize: Phaser.Structs.Size) => {
+      this.cameras.main.setViewport(0, 0, gameSize.width, gameSize.height);
+    });
+  }
+
+  private drawBackground(w: number, h: number): void {
     // Background
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x1a0a2e, 0x1a0a2e, 0x16213e, 0x16213e, 1);
@@ -61,9 +72,6 @@ export class MainMenuScene extends Phaser.Scene {
     const line = this.add.graphics();
     line.lineStyle(2, 0xff4444, 0.4);
     line.lineBetween(w * 0.25, h * 0.2, w * 0.75, h * 0.2);
-
-    this.panelContainer = this.add.container(0, 0);
-    this.showMainMenu();
 
     // Version
     this.add.text(w - 8, h - 8, `v${VERSION}`, {
