@@ -68,6 +68,8 @@ export class GameScene extends Phaser.Scene {
   private levelUpPanelObjects: Phaser.GameObjects.GameObject[] = [];
   // End screen UI
   private endScreenPanel?: Phaser.GameObjects.Container;
+  // Map boundary warning
+  private boundaryWarning!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'Game' });
@@ -144,6 +146,9 @@ export class GameScene extends Phaser.Scene {
     // 14. HUD
     this.createHUD();
 
+    // 14.5 Map boundary warning overlay
+    this.boundaryWarning = this.add.graphics().setScrollFactor(0).setDepth(90).setAlpha(0);
+
     // 15. Damage Text Manager
     this.damageTextManager = new DamageTextManager(this);
 
@@ -206,6 +211,9 @@ export class GameScene extends Phaser.Scene {
 
     // HUD
     this.updateHUD();
+
+    // Map boundary warning
+    this.updateBoundaryWarning();
   }
 
   private updateProjectiles(delta: number): void {
@@ -368,6 +376,39 @@ export class GameScene extends Phaser.Scene {
     }
     this.gameState = GameState.Playing;
     this.physics.resume();
+  }
+
+  private updateBoundaryWarning(): void {
+    const margin = 200;
+    const px = this.player.sprite.x;
+    const py = this.player.sprite.y;
+
+    // Calculate how close to edge (0 = safe, 1 = at edge)
+    const leftDist = px / margin;
+    const rightDist = (MAP_WIDTH - px) / margin;
+    const topDist = py / margin;
+    const bottomDist = (MAP_HEIGHT - py) / margin;
+    const closeness = 1 - Math.min(leftDist, rightDist, topDist, bottomDist, 1);
+
+    if (closeness > 0) {
+      const camW = this.cameras.main.width;
+      const camH = this.cameras.main.height;
+      const alpha = closeness * 0.4;
+
+      this.boundaryWarning.clear();
+      this.boundaryWarning.setAlpha(1);
+
+      // Red vignette edges
+      const thickness = 8 + closeness * 20;
+      this.boundaryWarning.fillStyle(0xff0000, alpha);
+
+      if (px < margin) this.boundaryWarning.fillRect(0, 0, thickness, camH);
+      if (px > MAP_WIDTH - margin) this.boundaryWarning.fillRect(camW - thickness, 0, thickness, camH);
+      if (py < margin) this.boundaryWarning.fillRect(0, 0, camW, thickness);
+      if (py > MAP_HEIGHT - margin) this.boundaryWarning.fillRect(0, camH - thickness, camW, thickness);
+    } else {
+      this.boundaryWarning.clear();
+    }
   }
 
   private createGround(): void {
