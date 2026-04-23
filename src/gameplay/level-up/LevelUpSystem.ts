@@ -5,7 +5,7 @@ import { WeaponSystem, MAX_WEAPONS, MAX_PASSIVES } from '../weapons/WeaponSystem
 import { PassiveItemBase } from './PassiveItemBase';
 
 export interface LevelUpOption {
-  type: 'new_weapon' | 'upgrade_weapon' | 'new_passive' | 'upgrade_passive';
+  type: 'new_weapon' | 'upgrade_weapon' | 'new_passive' | 'upgrade_passive' | 'evolve_weapon';
   id: string;
   displayName: string;
   description: string;
@@ -88,6 +88,7 @@ export class LevelUpSystem {
     // 收集所有可能的選項
     const newItemPool: LevelUpOption[] = [];   // 新裝備/能力
     const upgradePool: LevelUpOption[] = [];   // 升級現有裝備/能力
+    const evolvePool: LevelUpOption[] = [];    // 進化選項（最高優先）
 
     // 可升級的武器
     for (const w of weapons) {
@@ -98,6 +99,14 @@ export class LevelUpSystem {
           id: w.id,
           displayName: `⚔ ${w.config.displayName} Lv${w.level + 1}`,
           description: nextLd?.description ?? '升級',
+        });
+      } else if (w.canEvolve(passives)) {
+        // 武器滿級且持有對應被動道具 → 進化選項
+        evolvePool.push({
+          type: 'evolve_weapon',
+          id: w.id,
+          displayName: `🌟 ${w.config.displayName}・進化`,
+          description: `進化為 ${w.config.evolvedWeaponId ? w.config.displayName + '・進化' : '究極型態'}`,
         });
       }
     }
@@ -147,10 +156,17 @@ export class LevelUpSystem {
       }
     }
 
-    // 核心邏輯：欄位未滿時，至少保證 1 個新裝備/能力選項
+    // 核心邏輯：進化選項最高優先，欄位未滿時保證新裝備選項
     const result: LevelUpOption[] = [];
 
-    if (newItemPool.length > 0 && (!weaponsFull || !passivesFull)) {
+    // 進化選項優先加入
+    this.shuffle(evolvePool);
+    for (const opt of evolvePool) {
+      if (result.length >= count) break;
+      result.push(opt);
+    }
+
+    if (result.length < count && newItemPool.length > 0 && (!weaponsFull || !passivesFull)) {
       // 欄位未滿：保證至少 1 個新裝備/能力
       this.shuffle(newItemPool);
       result.push(newItemPool[0]);
@@ -164,12 +180,14 @@ export class LevelUpSystem {
           result.push(opt);
         }
       }
-    } else {
-      // 欄位已滿：只提供升級選項
+    } else if (result.length < count) {
+      // 欄位已滿或沒有新裝備：用升級選項填充
       this.shuffle(upgradePool);
       for (const opt of upgradePool) {
         if (result.length >= count) break;
-        result.push(opt);
+        if (!result.some(r => r.id === opt.id && r.type === opt.type)) {
+          result.push(opt);
+        }
       }
     }
 
@@ -199,6 +217,10 @@ export class LevelUpSystem {
           const passive = new PassiveItemBase(option.config as PassiveItemConfig);
           this.weaponSystem.addPassive(passive);
         }
+        break;
+      }
+      case 'evolve_weapon': {
+        this.weaponSystem.evolveWeapon(option.id);
         break;
       }
     }

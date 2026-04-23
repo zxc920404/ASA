@@ -85,6 +85,56 @@ export class WeaponSystem {
     }
   }
 
+  /**
+   * Evolve a weapon into its evolved form.
+   * Creates an enhanced config from the weapon's max-level data:
+   * damage x2, attackInterval x0.7, projectileCount +2.
+   * Returns the evolved weapon, or null if evolution is not possible.
+   */
+  evolveWeapon(weaponId: string): BaseWeapon | null {
+    const idx = this.weapons.findIndex(w => w.id === weaponId);
+    if (idx === -1) return null;
+
+    const weapon = this.weapons[idx];
+    if (!weapon.canEvolve(this.passives)) return null;
+
+    const originalConfig = weapon.config;
+    const maxLevelData = originalConfig.levelData[originalConfig.maxLevel - 1];
+
+    // Build evolved level data: single level with enhanced stats
+    const evolvedLevelData = {
+      level: 1,
+      damage: maxLevelData.damage * 2,
+      projectileCount: maxLevelData.projectileCount + 2,
+      attackRange: maxLevelData.attackRange,
+      attackInterval: Math.round(maxLevelData.attackInterval * 0.7 * 1000) / 1000,
+      description: `${originalConfig.displayName} 進化型態`,
+    };
+
+    const evolvedConfig: WeaponConfig = {
+      weaponId: originalConfig.evolvedWeaponId,
+      displayName: `${originalConfig.displayName}・進化`,
+      atlasFrame: originalConfig.atlasFrame,
+      projectileFrame: originalConfig.projectileFrame,
+      baseDamage: evolvedLevelData.damage,
+      attackInterval: evolvedLevelData.attackInterval,
+      attackRange: evolvedLevelData.attackRange,
+      maxLevel: 1,
+      attackPattern: originalConfig.attackPattern,
+      levelData: [evolvedLevelData],
+      evolutionPassiveId: '',
+      evolvedWeaponId: '',
+    };
+
+    // Destroy old weapon and create evolved one
+    weapon.destroy();
+    const evolvedWeapon = this.createWeapon(evolvedConfig);
+    if (evolvedWeapon) {
+      this.weapons[idx] = evolvedWeapon;
+    }
+    return evolvedWeapon;
+  }
+
   /** Calculate final damage: baseDamage * attackPower multiplier */
   calculateDamage(baseDamage: number): number {
     return baseDamage * this.attackPowerMultiplier();
