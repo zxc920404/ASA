@@ -174,4 +174,9 @@ export class DropSystem {
     const gem = this.gemPool.spawn(x, y, xpValue);
     this.activeGems.add(gem);
   }
+
+  /** 獲取當前場上經驗球數量（用於效能監控）*/
+  public getActiveDropCount(): number {
+    return this.activeGems.size;
+  }
 }

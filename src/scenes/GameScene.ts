@@ -72,7 +72,18 @@ export class GameScene extends Phaser.Scene {
   private boundaryWarning!: Phaser.GameObjects.Graphics;
   // Visual effects
   private vignette!: Phaser.GameObjects.Graphics;
-  private ambientParticles!: Phaser.GameObjects.Particles.ParticleEmitter;
+
+  // 效能優化：HUD 更新計時器
+  private hudUpdateTimer: number = 0;
+  private hudUpdateInterval: number = 100; // 每 100ms 更新一次 HUD（10 FPS）
+  private lastHP: number = 0;
+  private lastXP: number = 0;
+  private lastLevel: number = 0;
+  private lastKillCount: number = 0;
+  
+  // 效能監控
+  private fpsText!: Phaser.GameObjects.Text;
+  private debugText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'Game' });
@@ -162,6 +173,21 @@ export class GameScene extends Phaser.Scene {
     // 14.5 Map boundary warning overlay
     this.boundaryWarning = this.add.graphics().setScrollFactor(0).setDepth(90).setAlpha(0);
 
+    // 14.6 效能監控 UI
+    this.fpsText = this.add.text(10, this.cameras.main.height - 60, 'FPS: 60', {
+      fontSize: '14px',
+      color: '#00ff00',
+      backgroundColor: '#000000',
+      padding: { x: 5, y: 3 },
+    }).setScrollFactor(0).setDepth(200);
+
+    this.debugText = this.add.text(10, this.cameras.main.height - 40, '', {
+      fontSize: '12px',
+      color: '#ffff00',
+      backgroundColor: '#000000',
+      padding: { x: 5, y: 3 },
+    }).setScrollFactor(0).setDepth(200);
+
     // 15. Damage Text Manager
     this.damageTextManager = new DamageTextManager(this);
 
@@ -222,11 +248,20 @@ export class GameScene extends Phaser.Scene {
     // Enemy-enemy collision (push apart)
     this.resolveEnemyCollisions();
 
-    // HUD
-    this.updateHUD();
+    // HUD 更新節流（每 100ms 更新一次，而不是每幀）
+    this.hudUpdateTimer += delta;
+    if (this.hudUpdateTimer >= this.hudUpdateInterval) {
+      this.hudUpdateTimer = 0;
+      this.updateHUD();
+    }
 
     // Map boundary warning
     this.updateBoundaryWarning();
+
+    // 效能監控更新（每 500ms 更新一次）
+    if (Math.floor(_time / 500) !== Math.floor((_time - delta) / 500)) {
+      this.updatePerformanceMonitor();
+    }
   }
 
   private updateProjectiles(delta: number): void {
@@ -424,6 +459,23 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private updatePerformanceMonitor(): void {
+    // 更新 FPS 顯示
+    const fps = Math.round(this.game.loop.actualFps);
+    const fpsColor = fps >= 50 ? '#00ff00' : fps >= 30 ? '#ffff00' : '#ff0000';
+    this.fpsText.setText(`FPS: ${fps}`);
+    this.fpsText.setColor(fpsColor);
+
+    // 更新 Debug 資訊
+    const enemyCount = this.enemySpawner.getActiveEnemies().length;
+    const projectileCount = this.projectilePool.getActiveObjects().size;
+    const dropCount = this.dropSystem.getActiveDropCount();
+    
+    this.debugText.setText(
+      `敵人:${enemyCount} 投射物:${projectileCount} 掉落物:${dropCount}`
+    );
+  }
+
   private createGround(): void {
     // === 1. 檢查是否有草地背景圖片，如果沒有則生成 ===
     if (!this.textures.exists('grass_bg')) {
@@ -438,34 +490,21 @@ export class GameScene extends Phaser.Scene {
     // 隨機偏移 tile 起始位置，打破重複感
     grassBg.setTilePosition(Math.random() * 512, Math.random() * 512);
     
-    // === 3. 多層半透明 overlay 弱化重複感 ===
-    // 第一層：整體暗色 overlay
+    // === 3. 單層半透明 overlay（移除噪點層以提升效能）===
     const overlay1 = this.add.graphics();
-    overlay1.fillStyle(0x0a0a0a, 0.35); // 加深透明度
+    overlay1.fillStyle(0x0a0a0a, 0.3);
     overlay1.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     overlay1.setDepth(-18);
     
-    // 第二層：隨機噪點 overlay 打破規律
-    const overlay2 = this.add.graphics();
-    overlay2.setDepth(-17);
-    for (let i = 0; i < 3000; i++) {
-      const x = Math.random() * MAP_WIDTH;
-      const y = Math.random() * MAP_HEIGHT;
-      const size = 2 + Math.random() * 4;
-      const alpha = 0.05 + Math.random() * 0.15;
-      overlay2.fillStyle(0x000000, alpha);
-      overlay2.fillCircle(x, y, size);
-    }
-    
-    // === 4. 大量隨機裝飾物遮住接縫 ===
+    // === 4. 優化後的裝飾物（大幅減少數量）===
     this.createMapDecorations();
     
     // === 5. 創建暗角效果（固定在螢幕上）===
     this.vignette = this.add.graphics().setScrollFactor(0).setDepth(95);
     this.updateVignette();
     
-    // === 6. 創建漂浮粒子效果 ===
-    this.createAmbientParticles();
+    // === 6. 移除漂浮粒子以提升效能 ===
+    // this.createAmbientParticles(); // 暫時停用
   }
   
   private generateGrassTexture(): void {
@@ -546,9 +585,9 @@ export class GameScene extends Phaser.Scene {
   }
   
   private createMapDecorations(): void {
-    // 大幅增加裝飾物密度來遮住接縫
-    // 數量控制：每 300x300 區域約 8-12 個裝飾物（原本是 500x500 區域 3-5 個）
-    const decorationCount = Math.floor((MAP_WIDTH * MAP_HEIGHT) / (300 * 300) * 10);
+    // 大幅減少裝飾物密度以提升效能
+    // 從每 300x300 區域 10 個 → 每 1000x1000 區域 5 個
+    const decorationCount = Math.floor((MAP_WIDTH * MAP_HEIGHT) / (1000 * 1000) * 5);
     
     const decorations = this.add.graphics();
     decorations.setDepth(-10);
@@ -556,60 +595,26 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < decorationCount; i++) {
       const x = Math.random() * MAP_WIDTH;
       const y = Math.random() * MAP_HEIGHT;
-      const type = Math.floor(Math.random() * 5); // 增加裝飾物種類
+      const type = Math.floor(Math.random() * 3); // 減少裝飾物種類以簡化繪製
       
       switch (type) {
-        case 0: // 草叢（深綠色小圓）
-          const grassSize = 10 + Math.random() * 18;
-          decorations.fillStyle(0x1a3a1a, 0.5 + Math.random() * 0.3);
+        case 0: // 草叢（深綠色小圓，移除模糊效果）
+          const grassSize = 15 + Math.random() * 25;
+          decorations.fillStyle(0x1a3a1a, 0.4 + Math.random() * 0.3);
           decorations.fillCircle(x, y, grassSize);
-          // 加入草叢邊緣模糊效果
-          decorations.fillStyle(0x1a3a1a, 0.2);
-          decorations.fillCircle(x, y, grassSize * 1.3);
           break;
           
-        case 1: // 石頭（灰色橢圓）
-          const rockW = 15 + Math.random() * 25;
-          const rockH = 10 + Math.random() * 20;
-          decorations.fillStyle(0x3a3a3a, 0.6 + Math.random() * 0.3);
+        case 1: // 石頭（灰色橢圓，移除陰影）
+          const rockW = 20 + Math.random() * 30;
+          const rockH = 15 + Math.random() * 25;
+          decorations.fillStyle(0x3a3a3a, 0.5 + Math.random() * 0.3);
           decorations.fillEllipse(x, y, rockW, rockH);
-          // 石頭陰影
-          decorations.fillStyle(0x000000, 0.3);
-          decorations.fillEllipse(x + 2, y + 2, rockW * 0.8, rockH * 0.8);
           break;
           
         case 2: // 地面陰影（深色圓形）
-          const shadowSize = 20 + Math.random() * 35;
-          decorations.fillStyle(0x000000, 0.2 + Math.random() * 0.2);
+          const shadowSize = 25 + Math.random() * 40;
+          decorations.fillStyle(0x000000, 0.15 + Math.random() * 0.2);
           decorations.fillCircle(x, y, shadowSize);
-          break;
-          
-        case 3: // 深色草地斑塊（不規則形狀）
-          const patchSize = 25 + Math.random() * 40;
-          decorations.fillStyle(0x0d2a0d, 0.4 + Math.random() * 0.3);
-          // 繪製不規則多邊形
-          decorations.beginPath();
-          for (let j = 0; j < 6; j++) {
-            const angle = (j / 6) * Math.PI * 2;
-            const radius = patchSize * (0.7 + Math.random() * 0.6);
-            const px = x + Math.cos(angle) * radius;
-            const py = y + Math.sin(angle) * radius;
-            if (j === 0) decorations.moveTo(px, py);
-            else decorations.lineTo(px, py);
-          }
-          decorations.closePath();
-          decorations.fillPath();
-          break;
-          
-        case 4: // 小型草叢群（多個小圓組成）
-          const clusterCount = 3 + Math.floor(Math.random() * 5);
-          for (let j = 0; j < clusterCount; j++) {
-            const offsetX = (Math.random() - 0.5) * 30;
-            const offsetY = (Math.random() - 0.5) * 30;
-            const smallGrassSize = 5 + Math.random() * 10;
-            decorations.fillStyle(0x1a3a1a, 0.4 + Math.random() * 0.3);
-            decorations.fillCircle(x + offsetX, y + offsetY, smallGrassSize);
-          }
           break;
       }
     }
@@ -650,29 +655,6 @@ export class GameScene extends Phaser.Scene {
     this.vignette.fillTriangle(camW, camH, camW - cornerSize, camH, camW, camH - cornerSize);
   }
   
-  private createAmbientParticles(): void {
-    // 創建簡單的漂浮粒子（使用 Graphics 繪製）
-    const particleGraphics = this.add.graphics();
-    particleGraphics.fillStyle(0xaaaaff, 0.6);
-    particleGraphics.fillCircle(2, 2, 2);
-    particleGraphics.generateTexture('particle', 4, 4);
-    particleGraphics.destroy();
-    
-    // 創建粒子發射器
-    this.ambientParticles = this.add.particles(0, 0, 'particle', {
-      x: { min: 0, max: MAP_WIDTH },
-      y: { min: 0, max: MAP_HEIGHT },
-      lifespan: 8000,
-      speedX: { min: -10, max: 10 },
-      speedY: { min: -20, max: -5 },
-      scale: { start: 0.3, end: 0 },
-      alpha: { start: 0.3, end: 0 },
-      frequency: 300,
-      blendMode: 'ADD',
-    });
-    this.ambientParticles.setDepth(-5);
-  }
-
   private getCharacterConfig(characterId: string): CharacterConfig {
     const characters = this.cache.json.get('characters-config') as CharacterConfig[] | undefined;
     if (characters) {
@@ -905,92 +887,109 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateHUD(): void {
-    // 倒數計時器
+    // 倒數計時器（每秒更新一次即可）
     const remaining = Math.max(0, GAME_DURATION - this.gameTime);
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
     this.timeText.setText(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
     
-    // 等級
-    this.levelText.setText(`${this.levelUpSystem.currentLevel}`);
+    // 只在等級變化時更新
+    if (this.lastLevel !== this.levelUpSystem.currentLevel) {
+      this.lastLevel = this.levelUpSystem.currentLevel;
+      this.levelText.setText(`${this.levelUpSystem.currentLevel}`);
+    }
     
-    // 擊殺數
-    this.killText.setText(`${this.killCount}`);
+    // 只在擊殺數變化時更新
+    if (this.lastKillCount !== this.killCount) {
+      this.lastKillCount = this.killCount;
+      this.killText.setText(`${this.killCount}`);
+    }
 
-    // === 更新 HP 血條（紅色漸層）===
-    const hpPercent = this.player.currentHP / this.player.maxHP;
-    const panelX = 12;
-    const panelY = 28;
-    const panelW = 240;
-    const hpBarX = panelX + 15;
-    const hpBarY = panelY + 95 + 20;
-    const hpBarW = panelW - 30;
-    const hpBarH = 16;
-    
-    this.hpText.clear();
-    
-    // 繪製 HP 條漸層（紅色到深紅色）
-    const hpFillW = hpBarW * hpPercent;
-    for (let i = 0; i < hpFillW; i++) {
-      const ratio = i / hpBarW;
-      // 根據血量百分比改變顏色
-      let r, g, b;
-      if (hpPercent > 0.5) {
-        // 健康：亮紅色到橙紅色
-        r = 255;
-        g = Math.floor(80 - ratio * 40);
-        b = 20;
-      } else if (hpPercent > 0.25) {
-        // 警告：橙紅色
-        r = 255;
-        g = Math.floor(60 - ratio * 30);
-        b = 0;
-      } else {
-        // 危險：深紅色閃爍
-        const flash = Math.sin(Date.now() / 200) * 0.3 + 0.7;
-        r = Math.floor(200 * flash);
-        g = 0;
-        b = 0;
+    // === 更新 HP 血條（只在 HP 變化時重繪）===
+    const currentHP = Math.ceil(this.player.currentHP);
+    if (this.lastHP !== currentHP) {
+      this.lastHP = currentHP;
+      
+      const hpPercent = this.player.currentHP / this.player.maxHP;
+      const panelX = 12;
+      const panelY = 28;
+      const panelW = 240;
+      const hpBarX = panelX + 15;
+      const hpBarY = panelY + 95 + 20;
+      const hpBarW = panelW - 30;
+      const hpBarH = 16;
+      
+      this.hpText.clear();
+      
+      // 繪製 HP 條漸層（紅色到深紅色）
+      const hpFillW = hpBarW * hpPercent;
+      for (let i = 0; i < hpFillW; i++) {
+        const ratio = i / hpBarW;
+        // 根據血量百分比改變顏色
+        let r, g, b;
+        if (hpPercent > 0.5) {
+          // 健康：亮紅色到橙紅色
+          r = 255;
+          g = Math.floor(80 - ratio * 40);
+          b = 20;
+        } else if (hpPercent > 0.25) {
+          // 警告：橙紅色
+          r = 255;
+          g = Math.floor(60 - ratio * 30);
+          b = 0;
+        } else {
+          // 危險：深紅色
+          r = 200;
+          g = 0;
+          b = 0;
+        }
+        const color = (r << 16) | (g << 8) | b;
+        this.hpText.fillStyle(color, 1);
+        this.hpText.fillRect(hpBarX + 2 + i, hpBarY + 2, 1, hpBarH - 4);
       }
-      const color = (r << 16) | (g << 8) | b;
-      this.hpText.fillStyle(color, 1);
-      this.hpText.fillRect(hpBarX + 2 + i, hpBarY + 2, 1, hpBarH - 4);
-    }
-    
-    // HP 數值文字
-    const hpValueText = this.children.getByName('hpValueText') as Phaser.GameObjects.Text;
-    if (hpValueText) {
-      hpValueText.setText(`${Math.ceil(this.player.currentHP)} / ${Math.ceil(this.player.maxHP)}`);
-      hpValueText.setPosition(hpBarX + hpBarW / 2, hpBarY + hpBarH / 2);
+      
+      // HP 數值文字
+      const hpValueText = this.children.getByName('hpValueText') as Phaser.GameObjects.Text;
+      if (hpValueText) {
+        hpValueText.setText(`${currentHP} / ${Math.ceil(this.player.maxHP)}`);
+        hpValueText.setPosition(hpBarX + hpBarW / 2, hpBarY + hpBarH / 2);
+      }
     }
 
-    // === 更新 XP 經驗條（黃色漸層）===
-    const xp = this.levelUpSystem.currentXP;
-    const xpNeeded = this.levelUpSystem.xpToNextLevel;
-    const xpRatio = xpNeeded > 0 ? Math.min(xp / xpNeeded, 1) : 0;
-    const camW = this.cameras.main.width;
+    // === 更新 XP 經驗條（只在 XP 變化時重繪）===
+    const currentXP = Math.floor(this.levelUpSystem.currentXP);
+    if (this.lastXP !== currentXP) {
+      this.lastXP = currentXP;
+      
+      const xp = this.levelUpSystem.currentXP;
+      const xpNeeded = this.levelUpSystem.xpToNextLevel;
+      const xpRatio = xpNeeded > 0 ? Math.min(xp / xpNeeded, 1) : 0;
+      const camW = this.cameras.main.width;
 
-    this.xpBarFill.clear();
-    
-    // 繪製黃色漸層 XP 條
-    const xpBarWidth = camW * xpRatio;
-    for (let i = 0; i < xpBarWidth; i++) {
-      const colorRatio = i / camW;
-      // 金黃色漸層
-      const r = Math.floor(255 - colorRatio * 50);
-      const g = Math.floor(200 - colorRatio * 50);
-      const b = Math.floor(50 + colorRatio * 100);
-      const color = (r << 16) | (g << 8) | b;
-      this.xpBarFill.fillStyle(color, 1);
-      this.xpBarFill.fillRect(i, 3, 1, 12);
+      this.xpBarFill.clear();
+      
+      // 繪製黃色漸層 XP 條
+      const xpBarWidth = camW * xpRatio;
+      for (let i = 0; i < xpBarWidth; i++) {
+        const colorRatio = i / camW;
+        // 金黃色漸層
+        const r = Math.floor(255 - colorRatio * 50);
+        const g = Math.floor(200 - colorRatio * 50);
+        const b = Math.floor(50 + colorRatio * 100);
+        const color = (r << 16) | (g << 8) | b;
+        this.xpBarFill.fillStyle(color, 1);
+        this.xpBarFill.fillRect(i, 3, 1, 12);
+      }
+
+      // XP 文字（顯示等級和百分比）
+      const xpPercent = Math.floor(xpRatio * 100);
+      this.xpText.setText(`Lv ${this.levelUpSystem.currentLevel}  |  ${xpPercent}%`);
     }
 
-    // XP 文字（顯示等級和百分比）
-    const xpPercent = Math.floor(xpRatio * 100);
-    this.xpText.setText(`Lv ${this.levelUpSystem.currentLevel}  |  ${xpPercent}%`);
-
-    // 更新裝備欄 UI
-    this.updateEquipmentSlots();
+    // 裝備欄只在等級變化時更新（因為升級時才會改變裝備）
+    if (this.lastLevel !== this.levelUpSystem.currentLevel) {
+      this.updateEquipmentSlots();
+    }
 
     // 倒數歸零 → 勝利
     if (remaining <= 0 && this.gameState === GameState.Playing) {
