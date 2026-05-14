@@ -28,8 +28,8 @@ export enum GameState {
   Victory = 'victory',
 }
 
-const MAP_WIDTH = 3200;
-const MAP_HEIGHT = 3200;
+const MAP_WIDTH = 5000;
+const MAP_HEIGHT = 5000;
 const GAME_DURATION = 30 * 60; // 30 分鐘（秒）
 
 export class GameScene extends Phaser.Scene {
@@ -425,40 +425,63 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createGround(): void {
-    // 深色暗黑風格背景
-    const ground = this.add.graphics();
+    // === 1. 平鋪草地背景 ===
+    // 使用 TileSprite 來平鋪背景圖片
+    const grassBg = this.add.tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, 'grass_bg');
+    grassBg.setOrigin(0, 0);
+    grassBg.setDepth(-20);
     
-    // 基礎深色地板
-    ground.fillStyle(0x1a1a2e, 1);
-    ground.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    // === 2. 半透明暗色 overlay 弱化重複感 ===
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x0a0a0a, 0.25); // 深色半透明
+    overlay.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    overlay.setDepth(-15);
     
-    // 添加網格線（更暗的顏色）
-    ground.lineStyle(1, 0x2a2a3e, 0.4);
-    for (let x = 0; x <= MAP_WIDTH; x += 64) {
-      ground.lineBetween(x, 0, x, MAP_HEIGHT);
-    }
-    for (let y = 0; y <= MAP_HEIGHT; y += 64) {
-      ground.lineBetween(0, y, MAP_WIDTH, y);
-    }
+    // === 3. 隨機裝飾物（草叢、石頭、陰影）===
+    this.createMapDecorations();
     
-    // 添加隨機暗色斑點（模擬地面紋理）
-    for (let i = 0; i < 500; i++) {
-      const x = Math.random() * MAP_WIDTH;
-      const y = Math.random() * MAP_HEIGHT;
-      const size = 2 + Math.random() * 4;
-      const alpha = 0.1 + Math.random() * 0.2;
-      ground.fillStyle(0x0f0f1e, alpha);
-      ground.fillCircle(x, y, size);
-    }
-    
-    ground.setDepth(-10);
-    
-    // 創建暗角效果（固定在螢幕上）
+    // === 4. 創建暗角效果（固定在螢幕上）===
     this.vignette = this.add.graphics().setScrollFactor(0).setDepth(95);
     this.updateVignette();
     
-    // 創建漂浮粒子效果
+    // === 5. 創建漂浮粒子效果 ===
     this.createAmbientParticles();
+  }
+  
+  private createMapDecorations(): void {
+    // 在地圖上隨機放置裝飾物
+    // 數量控制：每 500x500 區域約 3-5 個裝飾物
+    const decorationCount = Math.floor((MAP_WIDTH * MAP_HEIGHT) / (500 * 500) * 4);
+    
+    const decorations = this.add.graphics();
+    decorations.setDepth(-10);
+    
+    for (let i = 0; i < decorationCount; i++) {
+      const x = Math.random() * MAP_WIDTH;
+      const y = Math.random() * MAP_HEIGHT;
+      const type = Math.floor(Math.random() * 3); // 0: 草叢, 1: 石頭, 2: 陰影
+      
+      switch (type) {
+        case 0: // 草叢（深綠色小圓）
+          const grassSize = 8 + Math.random() * 12;
+          decorations.fillStyle(0x1a3a1a, 0.4 + Math.random() * 0.3);
+          decorations.fillCircle(x, y, grassSize);
+          break;
+          
+        case 1: // 石頭（灰色橢圓）
+          const rockW = 12 + Math.random() * 20;
+          const rockH = 8 + Math.random() * 15;
+          decorations.fillStyle(0x3a3a3a, 0.5 + Math.random() * 0.3);
+          decorations.fillEllipse(x, y, rockW, rockH);
+          break;
+          
+        case 2: // 地面陰影（深色圓形）
+          const shadowSize = 15 + Math.random() * 25;
+          decorations.fillStyle(0x000000, 0.15 + Math.random() * 0.15);
+          decorations.fillCircle(x, y, shadowSize);
+          break;
+      }
+    }
   }
   
   private updateVignette(): void {

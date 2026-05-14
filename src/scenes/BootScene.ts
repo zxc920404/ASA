@@ -22,6 +22,10 @@ export class BootScene extends Phaser.Scene {
       'assets/sprites/game-atlas.json'
     );
 
+    // === Background Images ===
+    // Grass battle background for large explorable map
+    this.load.image('grass_bg', 'assets/sprites/grass_battle_bg.png');
+
     // === Tilemap JSON ===
     // Forest map
     this.load.tilemapTiledJSON('map-forest', 'assets/tilemaps/forest.json');
