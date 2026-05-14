@@ -431,19 +431,33 @@ export class GameScene extends Phaser.Scene {
       this.generateGrassTexture();
     }
     
-    // === 2. 平鋪草地背景 ===
-    // 使用 TileSprite 來平鋪背景圖片
+    // === 2. 平鋪草地背景（加入隨機偏移打破規律性）===
     const grassBg = this.add.tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, 'grass_bg');
     grassBg.setOrigin(0, 0);
     grassBg.setDepth(-20);
+    // 隨機偏移 tile 起始位置，打破重複感
+    grassBg.setTilePosition(Math.random() * 512, Math.random() * 512);
     
-    // === 3. 半透明暗色 overlay 弱化重複感 ===
-    const overlay = this.add.graphics();
-    overlay.fillStyle(0x0a0a0a, 0.25); // 深色半透明
-    overlay.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    overlay.setDepth(-15);
+    // === 3. 多層半透明 overlay 弱化重複感 ===
+    // 第一層：整體暗色 overlay
+    const overlay1 = this.add.graphics();
+    overlay1.fillStyle(0x0a0a0a, 0.35); // 加深透明度
+    overlay1.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    overlay1.setDepth(-18);
     
-    // === 4. 隨機裝飾物（草叢、石頭、陰影）===
+    // 第二層：隨機噪點 overlay 打破規律
+    const overlay2 = this.add.graphics();
+    overlay2.setDepth(-17);
+    for (let i = 0; i < 3000; i++) {
+      const x = Math.random() * MAP_WIDTH;
+      const y = Math.random() * MAP_HEIGHT;
+      const size = 2 + Math.random() * 4;
+      const alpha = 0.05 + Math.random() * 0.15;
+      overlay2.fillStyle(0x000000, alpha);
+      overlay2.fillCircle(x, y, size);
+    }
+    
+    // === 4. 大量隨機裝飾物遮住接縫 ===
     this.createMapDecorations();
     
     // === 5. 創建暗角效果（固定在螢幕上）===
@@ -455,41 +469,41 @@ export class GameScene extends Phaser.Scene {
   }
   
   private generateGrassTexture(): void {
-    // 生成 512x512 的草地紋理
+    // 生成 512x512 的無縫草地紋理
     const size = 512;
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d')!;
     
-    // 基礎草地顏色（深綠到淺綠漸層）
-    const gradient = ctx.createLinearGradient(0, 0, 0, size);
-    gradient.addColorStop(0, '#2d5016');
-    gradient.addColorStop(0.5, '#3a6b1e');
-    gradient.addColorStop(1, '#2d5016');
+    // 基礎草地顏色（深綠到淺綠漸層，使用徑向漸層讓中心更亮）
+    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    gradient.addColorStop(0, '#3a6b1e');
+    gradient.addColorStop(0.7, '#2d5016');
+    gradient.addColorStop(1, '#243f12');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
     
-    // 添加草地紋理（隨機深淺綠色點）
-    for (let i = 0; i < 2000; i++) {
+    // 添加草地紋理（隨機深淺綠色點，增加密度）
+    for (let i = 0; i < 3000; i++) {
       const x = Math.random() * size;
       const y = Math.random() * size;
-      const radius = 1 + Math.random() * 3;
-      const brightness = 0.8 + Math.random() * 0.4;
+      const radius = 1 + Math.random() * 4;
+      const brightness = 0.7 + Math.random() * 0.5;
       
-      ctx.fillStyle = `rgba(${Math.floor(45 * brightness)}, ${Math.floor(90 * brightness)}, ${Math.floor(30 * brightness)}, ${0.3 + Math.random() * 0.4})`;
+      ctx.fillStyle = `rgba(${Math.floor(45 * brightness)}, ${Math.floor(90 * brightness)}, ${Math.floor(30 * brightness)}, ${0.2 + Math.random() * 0.5})`;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
     }
     
-    // 添加草叢紋理（小線條）
-    ctx.strokeStyle = 'rgba(30, 60, 20, 0.3)';
+    // 添加草叢紋理（小線條，增加數量）
+    ctx.strokeStyle = 'rgba(30, 60, 20, 0.4)';
     ctx.lineWidth = 1;
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 800; i++) {
       const x = Math.random() * size;
       const y = Math.random() * size;
-      const length = 3 + Math.random() * 8;
+      const length = 3 + Math.random() * 10;
       const angle = Math.random() * Math.PI * 2;
       
       ctx.beginPath();
@@ -498,14 +512,43 @@ export class GameScene extends Phaser.Scene {
       ctx.stroke();
     }
     
+    // 添加深色斑塊增加變化
+    for (let i = 0; i < 50; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const radius = 10 + Math.random() * 30;
+      const gradient2 = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient2.addColorStop(0, 'rgba(10, 20, 10, 0.3)');
+      gradient2.addColorStop(1, 'rgba(10, 20, 10, 0)');
+      ctx.fillStyle = gradient2;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // 邊緣柔化處理（讓 tile 接縫更自然）
+    const edgeFade = 30;
+    for (let i = 0; i < edgeFade; i++) {
+      const alpha = (edgeFade - i) / edgeFade * 0.3;
+      ctx.fillStyle = `rgba(35, 60, 20, ${alpha})`;
+      // 上邊
+      ctx.fillRect(0, i, size, 1);
+      // 下邊
+      ctx.fillRect(0, size - i - 1, size, 1);
+      // 左邊
+      ctx.fillRect(i, 0, 1, size);
+      // 右邊
+      ctx.fillRect(size - i - 1, 0, 1, size);
+    }
+    
     // 將 canvas 轉換為 Phaser texture
     this.textures.addCanvas('grass_bg', canvas);
   }
   
   private createMapDecorations(): void {
-    // 在地圖上隨機放置裝飾物
-    // 數量控制：每 500x500 區域約 3-5 個裝飾物
-    const decorationCount = Math.floor((MAP_WIDTH * MAP_HEIGHT) / (500 * 500) * 4);
+    // 大幅增加裝飾物密度來遮住接縫
+    // 數量控制：每 300x300 區域約 8-12 個裝飾物（原本是 500x500 區域 3-5 個）
+    const decorationCount = Math.floor((MAP_WIDTH * MAP_HEIGHT) / (300 * 300) * 10);
     
     const decorations = this.add.graphics();
     decorations.setDepth(-10);
@@ -513,26 +556,60 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < decorationCount; i++) {
       const x = Math.random() * MAP_WIDTH;
       const y = Math.random() * MAP_HEIGHT;
-      const type = Math.floor(Math.random() * 3); // 0: 草叢, 1: 石頭, 2: 陰影
+      const type = Math.floor(Math.random() * 5); // 增加裝飾物種類
       
       switch (type) {
         case 0: // 草叢（深綠色小圓）
-          const grassSize = 8 + Math.random() * 12;
-          decorations.fillStyle(0x1a3a1a, 0.4 + Math.random() * 0.3);
+          const grassSize = 10 + Math.random() * 18;
+          decorations.fillStyle(0x1a3a1a, 0.5 + Math.random() * 0.3);
           decorations.fillCircle(x, y, grassSize);
+          // 加入草叢邊緣模糊效果
+          decorations.fillStyle(0x1a3a1a, 0.2);
+          decorations.fillCircle(x, y, grassSize * 1.3);
           break;
           
         case 1: // 石頭（灰色橢圓）
-          const rockW = 12 + Math.random() * 20;
-          const rockH = 8 + Math.random() * 15;
-          decorations.fillStyle(0x3a3a3a, 0.5 + Math.random() * 0.3);
+          const rockW = 15 + Math.random() * 25;
+          const rockH = 10 + Math.random() * 20;
+          decorations.fillStyle(0x3a3a3a, 0.6 + Math.random() * 0.3);
           decorations.fillEllipse(x, y, rockW, rockH);
+          // 石頭陰影
+          decorations.fillStyle(0x000000, 0.3);
+          decorations.fillEllipse(x + 2, y + 2, rockW * 0.8, rockH * 0.8);
           break;
           
         case 2: // 地面陰影（深色圓形）
-          const shadowSize = 15 + Math.random() * 25;
-          decorations.fillStyle(0x000000, 0.15 + Math.random() * 0.15);
+          const shadowSize = 20 + Math.random() * 35;
+          decorations.fillStyle(0x000000, 0.2 + Math.random() * 0.2);
           decorations.fillCircle(x, y, shadowSize);
+          break;
+          
+        case 3: // 深色草地斑塊（不規則形狀）
+          const patchSize = 25 + Math.random() * 40;
+          decorations.fillStyle(0x0d2a0d, 0.4 + Math.random() * 0.3);
+          // 繪製不規則多邊形
+          decorations.beginPath();
+          for (let j = 0; j < 6; j++) {
+            const angle = (j / 6) * Math.PI * 2;
+            const radius = patchSize * (0.7 + Math.random() * 0.6);
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            if (j === 0) decorations.moveTo(px, py);
+            else decorations.lineTo(px, py);
+          }
+          decorations.closePath();
+          decorations.fillPath();
+          break;
+          
+        case 4: // 小型草叢群（多個小圓組成）
+          const clusterCount = 3 + Math.floor(Math.random() * 5);
+          for (let j = 0; j < clusterCount; j++) {
+            const offsetX = (Math.random() - 0.5) * 30;
+            const offsetY = (Math.random() - 0.5) * 30;
+            const smallGrassSize = 5 + Math.random() * 10;
+            decorations.fillStyle(0x1a3a1a, 0.4 + Math.random() * 0.3);
+            decorations.fillCircle(x + offsetX, y + offsetY, smallGrassSize);
+          }
           break;
       }
     }
@@ -544,13 +621,33 @@ export class GameScene extends Phaser.Scene {
     
     this.vignette.clear();
     
-    // 繪製漸層暗角
-    const gradient = 100;
-    for (let i = 0; i < gradient; i++) {
-      const alpha = (i / gradient) * 0.6;
-      this.vignette.lineStyle(1, 0x000000, alpha);
+    // 繪製更柔和的漸層暗角
+    const gradientSteps = 120; // 增加漸層步數讓過渡更平滑
+    const maxAlpha = 0.7; // 最大暗角透明度
+    
+    for (let i = 0; i < gradientSteps; i++) {
+      const progress = i / gradientSteps;
+      // 使用平方函數讓暗角過渡更自然
+      const alpha = Math.pow(progress, 2) * maxAlpha;
+      const thickness = 1;
+      
+      this.vignette.lineStyle(thickness, 0x000000, alpha);
       this.vignette.strokeRect(i, i, camW - i * 2, camH - i * 2);
     }
+    
+    // 加入四角額外暗化
+    const cornerSize = 150;
+    const cornerAlpha = 0.3;
+    this.vignette.fillStyle(0x000000, cornerAlpha);
+    
+    // 左上角
+    this.vignette.fillTriangle(0, 0, cornerSize, 0, 0, cornerSize);
+    // 右上角
+    this.vignette.fillTriangle(camW, 0, camW - cornerSize, 0, camW, cornerSize);
+    // 左下角
+    this.vignette.fillTriangle(0, camH, cornerSize, camH, 0, camH - cornerSize);
+    // 右下角
+    this.vignette.fillTriangle(camW, camH, camW - cornerSize, camH, camW, camH - cornerSize);
   }
   
   private createAmbientParticles(): void {
