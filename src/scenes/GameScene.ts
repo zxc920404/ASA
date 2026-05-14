@@ -707,96 +707,111 @@ export class GameScene extends Phaser.Scene {
   private createHUD(): void {
     const camW = this.cameras.main.width;
     
+    // 偵測是否為手機版
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const xpBarHeight = isMobile ? 14 : 18;
+    
     // === 頂部 XP 經驗條（全寬，黃色漸層）===
     this.xpBarBg = this.add.graphics().setScrollFactor(0).setDepth(99);
     this.xpBarBg.fillStyle(0x1a1a2e, 0.95);
-    this.xpBarBg.fillRect(0, 0, camW, 18);
+    this.xpBarBg.fillRect(0, 0, camW, xpBarHeight);
     this.xpBarBg.lineStyle(2, 0x665522, 1);
-    this.xpBarBg.strokeRect(0, 0, camW, 18);
+    this.xpBarBg.strokeRect(0, 0, camW, xpBarHeight);
 
     this.xpBarFill = this.add.graphics().setScrollFactor(0).setDepth(100);
 
-    this.xpText = this.add.text(camW / 2, 4, '', {
-      fontSize: '13px', 
+    const xpFontSize = isMobile ? '11px' : '13px';
+    this.xpText = this.add.text(camW / 2, xpBarHeight / 2 - 6, '', {
+      fontSize: xpFontSize, 
       color: '#ffee88',
       fontStyle: 'bold',
       stroke: '#000000',
-      strokeThickness: 4,
+      strokeThickness: 3,
     }).setScrollFactor(0).setDepth(101).setOrigin(0.5, 0);
 
-    // === 左上角狀態面板 ===
-    const panelX = 12;
-    const panelY = 28;
-    const panelW = 240;
-    const panelH = 140;
+    // === 左上角狀態面板（手機版縮小）===
+    const panelX = isMobile ? 8 : 12;
+    const panelY = xpBarHeight + (isMobile ? 6 : 10);
+    const panelW = Math.min(isMobile ? camW * 0.32 : 240, 240);
+    const panelH = isMobile ? 100 : 140;
     
     // 面板背景（深色半透明，帶漸層邊框）
     const hudBg = this.add.graphics().setScrollFactor(0).setDepth(98);
-    hudBg.fillStyle(0x0a0a1a, 0.85);
-    hudBg.fillRoundedRect(panelX, panelY, panelW, panelH, 10);
+    hudBg.fillStyle(0x0a0a1a, isMobile ? 0.75 : 0.85);
+    hudBg.fillRoundedRect(panelX, panelY, panelW, panelH, isMobile ? 6 : 10);
     // 漸層邊框效果
-    hudBg.lineStyle(3, 0x4466aa, 0.9);
-    hudBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 10);
-    hudBg.lineStyle(1, 0x6688cc, 0.6);
-    hudBg.strokeRoundedRect(panelX + 2, panelY + 2, panelW - 4, panelH - 4, 8);
+    hudBg.lineStyle(isMobile ? 2 : 3, 0x4466aa, 0.9);
+    hudBg.strokeRoundedRect(panelX, panelY, panelW, panelH, isMobile ? 6 : 10);
+    if (!isMobile) {
+      hudBg.lineStyle(1, 0x6688cc, 0.6);
+      hudBg.strokeRoundedRect(panelX + 2, panelY + 2, panelW - 4, panelH - 4, 8);
+    }
     
-    // 文字樣式（帶陰影和描邊）
+    // 文字樣式（手機版縮小）
+    const textFontSize = isMobile ? '12px' : '15px';
+    const labelFontSize = isMobile ? '10px' : '12px';
+    
     const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: '15px', 
+      fontSize: textFontSize, 
       color: '#ffffff',
       fontStyle: 'bold',
       stroke: '#000000',
-      strokeThickness: 4,
+      strokeThickness: isMobile ? 3 : 4,
     };
     
     const labelStyle: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: '12px', 
+      fontSize: labelFontSize, 
       color: '#aaaaaa',
       stroke: '#000000',
-      strokeThickness: 3,
+      strokeThickness: isMobile ? 2 : 3,
     };
     
+    const rowGap = isMobile ? 20 : 25;
+    const leftPad = panelX + (isMobile ? 10 : 15);
+    const valuePad = panelX + (isMobile ? 60 : 85);
+    
     // 時間
-    const timeY = panelY + 15;
-    this.add.text(panelX + 15, timeY, '⏱ 時間', labelStyle).setScrollFactor(0).setDepth(100);
-    this.timeText = this.add.text(panelX + 85, timeY, '', textStyle).setScrollFactor(0).setDepth(100);
+    const timeY = panelY + (isMobile ? 12 : 15);
+    this.add.text(leftPad, timeY, '⏱', labelStyle).setScrollFactor(0).setDepth(100);
+    this.timeText = this.add.text(valuePad, timeY, '', textStyle).setScrollFactor(0).setDepth(100);
     
     // 等級
-    const levelY = panelY + 40;
-    this.add.text(panelX + 15, levelY, '⭐ 等級', labelStyle).setScrollFactor(0).setDepth(100);
-    this.levelText = this.add.text(panelX + 85, levelY, '', textStyle).setScrollFactor(0).setDepth(100);
+    const levelY = timeY + rowGap;
+    this.add.text(leftPad, levelY, 'Lv', labelStyle).setScrollFactor(0).setDepth(100);
+    this.levelText = this.add.text(valuePad, levelY, '', textStyle).setScrollFactor(0).setDepth(100);
     
     // 擊殺數
-    const killY = panelY + 65;
-    this.add.text(panelX + 15, killY, '💀 擊殺', labelStyle).setScrollFactor(0).setDepth(100);
-    this.killText = this.add.text(panelX + 85, killY, '', textStyle).setScrollFactor(0).setDepth(100);
+    const killY = levelY + rowGap;
+    this.add.text(leftPad, killY, '💀', labelStyle).setScrollFactor(0).setDepth(100);
+    this.killText = this.add.text(valuePad, killY, '', textStyle).setScrollFactor(0).setDepth(100);
     
     // HP 血條（紅色漸層）
-    const hpY = panelY + 95;
-    this.add.text(panelX + 15, hpY, '❤ 生命', labelStyle).setScrollFactor(0).setDepth(100);
+    const hpY = killY + rowGap;
+    this.add.text(leftPad, hpY, '❤', labelStyle).setScrollFactor(0).setDepth(100);
     
     // HP 條背景
-    const hpBarX = panelX + 15;
-    const hpBarY = hpY + 20;
-    const hpBarW = panelW - 30;
-    const hpBarH = 16;
+    const hpBarX = leftPad;
+    const hpBarY = hpY + (isMobile ? 14 : 20);
+    const hpBarW = panelW - (isMobile ? 20 : 30);
+    const hpBarH = isMobile ? 12 : 16;
     
     const hpBarBg = this.add.graphics().setScrollFactor(0).setDepth(99);
     hpBarBg.fillStyle(0x330000, 0.9);
     hpBarBg.fillRoundedRect(hpBarX, hpBarY, hpBarW, hpBarH, 4);
-    hpBarBg.lineStyle(2, 0x660000, 1);
+    hpBarBg.lineStyle(isMobile ? 1 : 2, 0x660000, 1);
     hpBarBg.strokeRoundedRect(hpBarX, hpBarY, hpBarW, hpBarH, 4);
     
     // HP 條填充（會在 updateHUD 中繪製）
     this.hpText = this.add.graphics().setScrollFactor(0).setDepth(100);
     
     // HP 數值文字
+    const hpValueFontSize = isMobile ? '10px' : '12px';
     this.add.text(hpBarX + hpBarW / 2, hpBarY + hpBarH / 2, '', {
-      fontSize: '12px',
+      fontSize: hpValueFontSize,
       color: '#ffffff',
       fontStyle: 'bold',
       stroke: '#000000',
-      strokeThickness: 3,
+      strokeThickness: isMobile ? 2 : 3,
     }).setScrollFactor(0).setDepth(101).setOrigin(0.5, 0.5).setName('hpValueText');
 
     // 裝備欄 + 能力欄（螢幕底部）
@@ -809,71 +824,90 @@ export class GameScene extends Phaser.Scene {
 
     const camW = this.cameras.main.width;
     const camH = this.cameras.main.height;
-    const slotSize = 42; // 增大格子
-    const slotGap = 6;
+    
+    // 偵測是否為手機版
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // 手機版格子尺寸縮小
+    const slotSize = isMobile ? 36 : 42;
+    const slotGap = isMobile ? 4 : 6;
     const slotsPerRow = 6;
     const totalWidth = slotsPerRow * (slotSize + slotGap) - slotGap;
     const startX = (camW - totalWidth) / 2;
-    const weaponY = camH - slotSize * 2 - slotGap - 15;
-    const passiveY = camH - slotSize - 12;
+    
+    // Safe area bottom padding（避開手機瀏覽器工具列）
+    const safeBottom = isMobile ? 20 : 12;
+    const weaponBarHeight = slotSize + 20; // 格子高度 + 標籤高度
+    const passiveBarHeight = slotSize + 20;
+    
+    const weaponY = camH - safeBottom - weaponBarHeight - passiveBarHeight - slotGap;
+    const passiveY = camH - safeBottom - passiveBarHeight;
 
-    // 武器欄標籤（更明顯）
-    const weaponLabel = this.add.text(startX - 2, weaponY - 20, '⚔ 武器', {
-      fontSize: '13px', 
+    // 武器欄標籤
+    const labelFontSize = isMobile ? '11px' : '13px';
+    const weaponLabel = this.add.text(startX - 2, weaponY - (isMobile ? 16 : 20), '⚔ 武器', {
+      fontSize: labelFontSize, 
       color: '#ffaa44',
       fontStyle: 'bold',
       stroke: '#000000',
-      strokeThickness: 3,
+      strokeThickness: isMobile ? 2 : 3,
     }).setScrollFactor(0);
     this.equipmentContainer.add(weaponLabel);
 
     // 能力欄標籤
-    const passiveLabel = this.add.text(startX - 2, passiveY - 20, '💎 能力', {
-      fontSize: '13px', 
+    const passiveLabel = this.add.text(startX - 2, passiveY - (isMobile ? 16 : 20), '💎 能力', {
+      fontSize: labelFontSize, 
       color: '#44aaff',
       fontStyle: 'bold',
       stroke: '#000000',
-      strokeThickness: 3,
+      strokeThickness: isMobile ? 2 : 3,
     }).setScrollFactor(0);
     this.equipmentContainer.add(passiveLabel);
 
     const weapons = this.weaponSystem.getWeapons();
     const passives = this.weaponSystem.getPassives();
 
-    // 繪製 6 格武器欄（更清楚的邊框）
+    // 繪製 6 格武器欄
     for (let i = 0; i < slotsPerRow; i++) {
       const x = startX + i * (slotSize + slotGap) + slotSize / 2;
       const y = weaponY + slotSize / 2;
 
-      // 格子背景（雙層邊框）
+      // 格子背景
+      const borderWidth = isMobile ? 2 : 3;
       const bg = this.add.rectangle(x, y, slotSize, slotSize, 0x1a1a2e, 0.9)
-        .setStrokeStyle(3, i < weapons.length ? 0xffaa44 : 0x333355, 1)
+        .setStrokeStyle(borderWidth, i < weapons.length ? 0xffaa44 : 0x333355, 1)
         .setScrollFactor(0);
       this.equipmentContainer.add(bg);
       
-      // 內層邊框
-      const innerBorder = this.add.rectangle(x, y, slotSize - 6, slotSize - 6, 0x000000, 0)
-        .setStrokeStyle(1, i < weapons.length ? 0xffcc66 : 0x222233, 0.6)
-        .setScrollFactor(0);
-      this.equipmentContainer.add(innerBorder);
+      // 內層邊框（手機版省略）
+      if (!isMobile) {
+        const innerBorder = this.add.rectangle(x, y, slotSize - 6, slotSize - 6, 0x000000, 0)
+          .setStrokeStyle(1, i < weapons.length ? 0xffcc66 : 0x222233, 0.6)
+          .setScrollFactor(0);
+        this.equipmentContainer.add(innerBorder);
+      }
 
       if (i < weapons.length) {
         const w = weapons[i];
-        // 武器名稱首字（更大更清楚）
+        // 武器名稱首字
         const initial = w.config.displayName.charAt(0);
-        const txt = this.add.text(x, y - 6, initial, {
-          fontSize: '18px', 
+        const iconFontSize = isMobile ? '14px' : '18px';
+        const txt = this.add.text(x, y - (isMobile ? 4 : 6), initial, {
+          fontSize: iconFontSize, 
           color: '#ffaa44', 
           fontStyle: 'bold',
           stroke: '#000000',
-          strokeThickness: 3,
+          strokeThickness: isMobile ? 2 : 3,
         }).setOrigin(0.5).setScrollFactor(0);
         
-        // 等級（帶背景）
-        const lvlBg = this.add.rectangle(x, y + 12, 24, 14, 0x000000, 0.7)
+        // 等級
+        const lvlBgSize = isMobile ? 20 : 24;
+        const lvlBgHeight = isMobile ? 12 : 14;
+        const lvlBg = this.add.rectangle(x, y + (isMobile ? 10 : 12), lvlBgSize, lvlBgHeight, 0x000000, 0.7)
           .setScrollFactor(0);
-        const lvl = this.add.text(x, y + 12, `Lv${w.level}`, {
-          fontSize: '10px', 
+        const lvlFontSize = isMobile ? '9px' : '10px';
+        const lvl = this.add.text(x, y + (isMobile ? 10 : 12), `Lv${w.level}`, {
+          fontSize: lvlFontSize, 
           color: '#ffffff',
           fontStyle: 'bold',
         }).setOrigin(0.5).setScrollFactor(0);
@@ -886,34 +920,41 @@ export class GameScene extends Phaser.Scene {
       const x = startX + i * (slotSize + slotGap) + slotSize / 2;
       const y = passiveY + slotSize / 2;
 
-      // 格子背景（雙層邊框）
+      // 格子背景
+      const borderWidth = isMobile ? 2 : 3;
       const bg = this.add.rectangle(x, y, slotSize, slotSize, 0x1a1a2e, 0.9)
-        .setStrokeStyle(3, i < passives.length ? 0x44aaff : 0x333355, 1)
+        .setStrokeStyle(borderWidth, i < passives.length ? 0x44aaff : 0x333355, 1)
         .setScrollFactor(0);
       this.equipmentContainer.add(bg);
       
-      // 內層邊框
-      const innerBorder = this.add.rectangle(x, y, slotSize - 6, slotSize - 6, 0x000000, 0)
-        .setStrokeStyle(1, i < passives.length ? 0x66ccff : 0x222233, 0.6)
-        .setScrollFactor(0);
-      this.equipmentContainer.add(innerBorder);
+      // 內層邊框（手機版省略）
+      if (!isMobile) {
+        const innerBorder = this.add.rectangle(x, y, slotSize - 6, slotSize - 6, 0x000000, 0)
+          .setStrokeStyle(1, i < passives.length ? 0x66ccff : 0x222233, 0.6)
+          .setScrollFactor(0);
+        this.equipmentContainer.add(innerBorder);
+      }
 
       if (i < passives.length) {
         const p = passives[i];
         const initial = p.config.displayName.charAt(0);
-        const txt = this.add.text(x, y - 6, initial, {
-          fontSize: '18px', 
+        const iconFontSize = isMobile ? '14px' : '18px';
+        const txt = this.add.text(x, y - (isMobile ? 4 : 6), initial, {
+          fontSize: iconFontSize, 
           color: '#44aaff', 
           fontStyle: 'bold',
           stroke: '#000000',
-          strokeThickness: 3,
+          strokeThickness: isMobile ? 2 : 3,
         }).setOrigin(0.5).setScrollFactor(0);
         
-        // 等級（帶背景）
-        const lvlBg = this.add.rectangle(x, y + 12, 24, 14, 0x000000, 0.7)
+        // 等級
+        const lvlBgSize = isMobile ? 20 : 24;
+        const lvlBgHeight = isMobile ? 12 : 14;
+        const lvlBg = this.add.rectangle(x, y + (isMobile ? 10 : 12), lvlBgSize, lvlBgHeight, 0x000000, 0.7)
           .setScrollFactor(0);
-        const lvl = this.add.text(x, y + 12, `Lv${p.level}`, {
-          fontSize: '10px', 
+        const lvlFontSize = isMobile ? '9px' : '10px';
+        const lvl = this.add.text(x, y + (isMobile ? 10 : 12), `Lv${p.level}`, {
+          fontSize: lvlFontSize, 
           color: '#ffffff',
           fontStyle: 'bold',
         }).setOrigin(0.5).setScrollFactor(0);
@@ -947,13 +988,22 @@ export class GameScene extends Phaser.Scene {
       this.lastHP = currentHP;
       
       const hpPercent = this.player.currentHP / this.player.maxHP;
-      const panelX = 12;
-      const panelY = 28;
-      const panelW = 240;
-      const hpBarX = panelX + 15;
-      const hpBarY = panelY + 95 + 20;
-      const hpBarW = panelW - 30;
-      const hpBarH = 16;
+      
+      // 偵測手機版並動態計算尺寸
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const camW = this.cameras.main.width;
+      const xpBarHeight = isMobile ? 14 : 18;
+      
+      const panelX = isMobile ? 8 : 12;
+      const panelY = xpBarHeight + (isMobile ? 6 : 10);
+      const panelW = Math.min(isMobile ? camW * 0.32 : 240, 240);
+      const rowGap = isMobile ? 20 : 25;
+      const leftPad = panelX + (isMobile ? 10 : 15);
+      
+      const hpBarX = leftPad;
+      const hpBarY = panelY + (isMobile ? 12 : 15) + rowGap * 3 + (isMobile ? 14 : 20);
+      const hpBarW = panelW - (isMobile ? 20 : 30);
+      const hpBarH = isMobile ? 12 : 16;
       
       this.hpText.clear();
       
@@ -1001,6 +1051,10 @@ export class GameScene extends Phaser.Scene {
       const xpNeeded = this.levelUpSystem.xpToNextLevel;
       const xpRatio = xpNeeded > 0 ? Math.min(xp / xpNeeded, 1) : 0;
       const camW = this.cameras.main.width;
+      
+      // 手機版 XP 條高度
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const xpBarHeight = isMobile ? 14 : 18;
 
       this.xpBarFill.clear();
       
@@ -1014,7 +1068,7 @@ export class GameScene extends Phaser.Scene {
         const b = Math.floor(50 + colorRatio * 100);
         const color = (r << 16) | (g << 8) | b;
         this.xpBarFill.fillStyle(color, 1);
-        this.xpBarFill.fillRect(i, 3, 1, 12);
+        this.xpBarFill.fillRect(i, 3, 1, xpBarHeight - 6);
       }
 
       // XP 文字（顯示等級和百分比）

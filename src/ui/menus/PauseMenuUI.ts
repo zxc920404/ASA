@@ -40,20 +40,49 @@ export class PauseMenuUI {
 
   private createPauseButton(): void {
     const cam = this.scene.cameras.main;
-    this.pauseButton = this.scene.add.text(cam.width - 16, 12, '⏸', {
-      fontSize: '28px',
-      color: '#ffffff',
-      backgroundColor: '#00000066',
-      padding: { x: 10, y: 6 },
-    })
-      .setOrigin(1, 0)
+    
+    // 偵測手機版
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // 手機版：右上角，加大觸控區域
+    const buttonSize = isMobile ? 48 : 36;
+    const padding = isMobile ? 12 : 16;
+    const fontSize = isMobile ? '24px' : '28px';
+    
+    // 創建背景（加大觸控區域）
+    const bg = this.scene.add.rectangle(
+      cam.width - padding - buttonSize / 2,
+      padding + buttonSize / 2,
+      buttonSize,
+      buttonSize,
+      0x000000,
+      0.6
+    )
+      .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(150)
       .setInteractive({ useHandCursor: true });
-
-    this.pauseButton.on('pointerdown', () => this.toggle());
-    this.pauseButton.on('pointerover', () => this.pauseButton.setAlpha(0.7));
-    this.pauseButton.on('pointerout', () => this.pauseButton.setAlpha(1));
+    
+    bg.on('pointerdown', () => this.toggle());
+    bg.on('pointerover', () => bg.setAlpha(0.8));
+    bg.on('pointerout', () => bg.setAlpha(1));
+    
+    // 暫停圖示（在背景中心）
+    this.pauseButton = this.scene.add.text(
+      cam.width - padding - buttonSize / 2,
+      padding + buttonSize / 2,
+      '⏸',
+      {
+        fontSize,
+        color: '#ffffff',
+      }
+    )
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(151);
+    
+    // 將背景也存起來，以便後續控制
+    (this.pauseButton as any).bg = bg;
   }
 
   toggle(): void {
@@ -70,6 +99,9 @@ export class PauseMenuUI {
     this.scene.physics.pause();
     this.onPause?.();
     this.pauseButton.setVisible(false);
+    // 隱藏背景
+    const bg = (this.pauseButton as any).bg;
+    if (bg) bg.setVisible(false);
     this.showPanel();
     eventBus.emit(GameEventNames.GAME_PAUSED, {});
   }
@@ -79,6 +111,9 @@ export class PauseMenuUI {
     this.isPaused = false;
     this.hidePanel();
     this.pauseButton.setVisible(true);
+    // 顯示背景
+    const bg = (this.pauseButton as any).bg;
+    if (bg) bg.setVisible(true);
     this.scene.physics.resume();
     this.onResume();
     eventBus.emit(GameEventNames.GAME_RESUMED, {});
@@ -157,6 +192,8 @@ export class PauseMenuUI {
       this.escKey.removeAllListeners();
     }
     if (this.pauseButton) {
+      const bg = (this.pauseButton as any).bg;
+      if (bg) bg.destroy();
       this.pauseButton.destroy();
     }
   }

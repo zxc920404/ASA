@@ -14,10 +14,11 @@ export class TouchInputAdapter implements IInputAdapter {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
 
+    // 手機版降低透明度，不遮擋太多畫面
     this.joystickBase = scene.add.image(0, 0, 'joystick-base')
-      .setScrollFactor(0).setDepth(1000).setAlpha(0.5).setVisible(false);
+      .setScrollFactor(0).setDepth(1000).setAlpha(0.35).setVisible(false);
     this.joystickThumb = scene.add.image(0, 0, 'joystick-thumb')
-      .setScrollFactor(0).setDepth(1001).setAlpha(0.7).setVisible(false);
+      .setScrollFactor(0).setDepth(1001).setAlpha(0.5).setVisible(false);
 
     this.setupTouchListeners();
   }
@@ -46,11 +47,20 @@ export class TouchInputAdapter implements IInputAdapter {
 
   private setupTouchListeners(): void {
     this.scene.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // 只在左半螢幕且未啟動時啟動搖桿
       if (pointer.x < this.scene.scale.width / 2 && !this.isActive) {
         this.isActive = true;
         this.activePointerId = pointer.id;
-        this.joystickBase.setPosition(pointer.x, pointer.y).setVisible(true);
-        this.joystickThumb.setPosition(pointer.x, pointer.y).setVisible(true);
+        
+        // 計算 safe area bottom（避開瀏覽器工具列）
+        const safeBottom = 80; // 預留底部空間
+        const maxY = this.scene.scale.height - safeBottom;
+        
+        // 限制搖桿位置不要太靠近底部
+        const joystickY = Math.min(pointer.y, maxY);
+        
+        this.joystickBase.setPosition(pointer.x, joystickY).setVisible(true);
+        this.joystickThumb.setPosition(pointer.x, joystickY).setVisible(true);
       }
     });
 
@@ -61,6 +71,7 @@ export class TouchInputAdapter implements IInputAdapter {
       const dy = pointer.y - this.joystickBase.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
+      // 死區判定
       if (distance < this.joystickRadius * this.deadZoneRatio) {
         this.direction.set(0, 0);
         this.joystickThumb.setPosition(this.joystickBase.x, this.joystickBase.y);
