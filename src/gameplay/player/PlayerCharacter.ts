@@ -90,6 +90,9 @@ export class PlayerCharacter implements IPlayerCharacter {
     this.scene.time.delayedCall(100, () => {
       this.sprite.clearTint();
     });
+    
+    // 畫面震動
+    this.scene.cameras.main.shake(150, 0.005);
 
     if (this.currentHP <= 0) {
       this.isDead = true;

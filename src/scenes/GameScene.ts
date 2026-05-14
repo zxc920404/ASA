@@ -70,6 +70,9 @@ export class GameScene extends Phaser.Scene {
   private endScreenPanel?: Phaser.GameObjects.Container;
   // Map boundary warning
   private boundaryWarning!: Phaser.GameObjects.Graphics;
+  // Visual effects
+  private vignette!: Phaser.GameObjects.Graphics;
+  private ambientParticles!: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor() {
     super({ key: 'Game' });
@@ -111,10 +114,20 @@ export class GameScene extends Phaser.Scene {
       () => this.player.getEffectiveStat('attackPower'),
     );
 
-    // Add starting weapon
+    // MVP: 玩家一開始就擁有三種自動武器
     const allWeapons = weaponsData as WeaponConfig[];
-    const startWeapon = allWeapons.find(w => w.weaponId === charConfig.startingWeaponId);
-    if (startWeapon) this.weaponSystem.addWeapon(startWeapon);
+    
+    // 1. 飛劍環繞（太極環）
+    const orbitWeapon = allWeapons.find(w => w.weaponId === 'weapon_taichi_ring');
+    if (orbitWeapon) this.weaponSystem.addWeapon(orbitWeapon);
+    
+    // 2. 劍氣射擊（追風劍）
+    const projectileWeapon = allWeapons.find(w => w.weaponId === 'weapon_wind_sword');
+    if (projectileWeapon) this.weaponSystem.addWeapon(projectileWeapon);
+    
+    // 3. 靈氣爆發（烈焰掌）
+    const auraWeapon = allWeapons.find(w => w.weaponId === 'weapon_flame_palm');
+    if (auraWeapon) this.weaponSystem.addWeapon(auraWeapon);
 
     // 8. Wave Manager
     const enemyConfigsList = enemiesData as EnemyConfig[];
@@ -412,13 +425,78 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createGround(): void {
+    // 深色暗黑風格背景
     const ground = this.add.graphics();
-    ground.fillStyle(0x2d5a1e, 1);
+    
+    // 基礎深色地板
+    ground.fillStyle(0x1a1a2e, 1);
     ground.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    ground.lineStyle(1, 0x3a6b28, 0.3);
-    for (let x = 0; x <= MAP_WIDTH; x += 32) ground.lineBetween(x, 0, x, MAP_HEIGHT);
-    for (let y = 0; y <= MAP_HEIGHT; y += 32) ground.lineBetween(0, y, MAP_WIDTH, y);
-    ground.setDepth(-1);
+    
+    // 添加網格線（更暗的顏色）
+    ground.lineStyle(1, 0x2a2a3e, 0.4);
+    for (let x = 0; x <= MAP_WIDTH; x += 64) {
+      ground.lineBetween(x, 0, x, MAP_HEIGHT);
+    }
+    for (let y = 0; y <= MAP_HEIGHT; y += 64) {
+      ground.lineBetween(0, y, MAP_WIDTH, y);
+    }
+    
+    // 添加隨機暗色斑點（模擬地面紋理）
+    for (let i = 0; i < 500; i++) {
+      const x = Math.random() * MAP_WIDTH;
+      const y = Math.random() * MAP_HEIGHT;
+      const size = 2 + Math.random() * 4;
+      const alpha = 0.1 + Math.random() * 0.2;
+      ground.fillStyle(0x0f0f1e, alpha);
+      ground.fillCircle(x, y, size);
+    }
+    
+    ground.setDepth(-10);
+    
+    // 創建暗角效果（固定在螢幕上）
+    this.vignette = this.add.graphics().setScrollFactor(0).setDepth(95);
+    this.updateVignette();
+    
+    // 創建漂浮粒子效果
+    this.createAmbientParticles();
+  }
+  
+  private updateVignette(): void {
+    const camW = this.cameras.main.width;
+    const camH = this.cameras.main.height;
+    
+    this.vignette.clear();
+    
+    // 繪製漸層暗角
+    const gradient = 100;
+    for (let i = 0; i < gradient; i++) {
+      const alpha = (i / gradient) * 0.6;
+      this.vignette.lineStyle(1, 0x000000, alpha);
+      this.vignette.strokeRect(i, i, camW - i * 2, camH - i * 2);
+    }
+  }
+  
+  private createAmbientParticles(): void {
+    // 創建簡單的漂浮粒子（使用 Graphics 繪製）
+    const particleGraphics = this.add.graphics();
+    particleGraphics.fillStyle(0xaaaaff, 0.6);
+    particleGraphics.fillCircle(2, 2, 2);
+    particleGraphics.generateTexture('particle', 4, 4);
+    particleGraphics.destroy();
+    
+    // 創建粒子發射器
+    this.ambientParticles = this.add.particles(0, 0, 'particle', {
+      x: { min: 0, max: MAP_WIDTH },
+      y: { min: 0, max: MAP_HEIGHT },
+      lifespan: 8000,
+      speedX: { min: -10, max: 10 },
+      speedY: { min: -20, max: -5 },
+      scale: { start: 0.3, end: 0 },
+      alpha: { start: 0.3, end: 0 },
+      frequency: 300,
+      blendMode: 'ADD',
+    });
+    this.ambientParticles.setDepth(-5);
   }
 
   private getCharacterConfig(characterId: string): CharacterConfig {
@@ -435,27 +513,41 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createHUD(): void {
+    // 左上角狀態面板背景
+    const hudBg = this.add.graphics().setScrollFactor(0).setDepth(98);
+    hudBg.fillStyle(0x000000, 0.6);
+    hudBg.fillRoundedRect(5, 5, 200, 110, 8);
+    hudBg.lineStyle(2, 0x444466, 0.8);
+    hudBg.strokeRoundedRect(5, 5, 200, 110, 8);
+    
     const style: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: '16px', color: '#ffffff',
-      backgroundColor: '#00000088', padding: { x: 6, y: 4 },
+      fontSize: '16px', 
+      color: '#ffffff',
+      fontStyle: 'bold',
     };
-    this.timeText = this.add.text(10, 10, '', style).setScrollFactor(0).setDepth(100);
-    this.hpText = this.add.text(10, 36, '', style).setScrollFactor(0).setDepth(100);
-    this.levelText = this.add.text(10, 62, '', style).setScrollFactor(0).setDepth(100);
-    this.killText = this.add.text(10, 88, '', style).setScrollFactor(0).setDepth(100);
+    
+    this.timeText = this.add.text(15, 15, '', style).setScrollFactor(0).setDepth(100);
+    this.hpText = this.add.text(15, 41, '', style).setScrollFactor(0).setDepth(100);
+    this.levelText = this.add.text(15, 67, '', style).setScrollFactor(0).setDepth(100);
+    this.killText = this.add.text(15, 93, '', style).setScrollFactor(0).setDepth(100);
 
-    // XP 經驗值進度條（螢幕頂部全寬）
+    // XP 經驗值進度條（螢幕頂部全寬，更粗更明顯）
     const camW = this.cameras.main.width;
     this.xpBarBg = this.add.graphics().setScrollFactor(0).setDepth(99);
-    this.xpBarBg.fillStyle(0x222222, 0.8);
-    this.xpBarBg.fillRect(0, 0, camW, 6);
+    this.xpBarBg.fillStyle(0x1a1a2e, 0.9);
+    this.xpBarBg.fillRect(0, 0, camW, 12);
+    this.xpBarBg.lineStyle(2, 0x444466, 0.8);
+    this.xpBarBg.strokeRect(0, 0, camW, 12);
 
     this.xpBarFill = this.add.graphics().setScrollFactor(0).setDepth(100);
 
-    this.xpText = this.add.text(camW - 10, 10, '', {
-      fontSize: '14px', color: '#aaddff',
-      backgroundColor: '#00000088', padding: { x: 4, y: 2 },
-    }).setScrollFactor(0).setDepth(100).setOrigin(1, 0);
+    this.xpText = this.add.text(camW - 15, 2, '', {
+      fontSize: '14px', 
+      color: '#aaddff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setScrollFactor(0).setDepth(101).setOrigin(1, 0);
 
     // 裝備欄 + 能力欄（螢幕底部）
     this.equipmentContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
@@ -546,19 +638,34 @@ export class GameScene extends Phaser.Scene {
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
     this.timeText.setText(`⏱ ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
-    this.hpText.setText(`❤ ${Math.ceil(this.player.currentHP)} / ${Math.ceil(this.player.maxHP)}`);
+    
+    // HP 條顯示（帶顏色變化）
+    const hpPercent = this.player.currentHP / this.player.maxHP;
+    const hpColor = hpPercent > 0.5 ? '❤' : hpPercent > 0.25 ? '🧡' : '💔';
+    this.hpText.setText(`${hpColor} ${Math.ceil(this.player.currentHP)} / ${Math.ceil(this.player.maxHP)}`);
+    
     this.levelText.setText(`⭐ Lv ${this.levelUpSystem.currentLevel}`);
     this.killText.setText(`💀 ${this.killCount}`);
 
-    // 更新 XP 進度條
+    // 更新 XP 進度條（漸層效果）
     const xp = this.levelUpSystem.currentXP;
     const xpNeeded = this.levelUpSystem.xpToNextLevel;
     const ratio = xpNeeded > 0 ? Math.min(xp / xpNeeded, 1) : 0;
     const camW = this.cameras.main.width;
 
     this.xpBarFill.clear();
-    this.xpBarFill.fillStyle(0x44aaff, 1);
-    this.xpBarFill.fillRect(0, 0, camW * ratio, 6);
+    
+    // 繪製漸層 XP 條
+    const barWidth = camW * ratio;
+    for (let i = 0; i < barWidth; i++) {
+      const colorRatio = i / camW;
+      const r = Math.floor(68 + colorRatio * 100);
+      const g = Math.floor(170 + colorRatio * 85);
+      const b = 255;
+      const color = (r << 16) | (g << 8) | b;
+      this.xpBarFill.fillStyle(color, 1);
+      this.xpBarFill.fillRect(i, 2, 1, 8);
+    }
 
     this.xpText.setText(`XP ${Math.floor(xp)} / ${Math.floor(xpNeeded)}`);
 

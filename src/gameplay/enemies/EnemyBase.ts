@@ -117,6 +117,9 @@ export class EnemyBase implements PoolableObject {
   }
 
   private die(): void {
+    // 創建死亡粒子爆炸效果
+    this.createDeathParticles();
+    
     const event: EnemyKilledEvent = {
       position: { x: this.sprite.x, y: this.sprite.y },
       enemyId: this.id,
@@ -124,5 +127,24 @@ export class EnemyBase implements PoolableObject {
     };
     eventBus.emit(GameEventNames.ENEMY_KILLED, event);
     // Deactivation handled by spawner via pool despawn
+  }
+  
+  private createDeathParticles(): void {
+    // 創建簡單的粒子爆炸效果
+    const particles = this.scene.add.particles(this.sprite.x, this.sprite.y, 'particle', {
+      speed: { min: 50, max: 150 },
+      angle: { min: 0, max: 360 },
+      scale: { start: 0.6, end: 0 },
+      alpha: { start: 1, end: 0 },
+      lifespan: 400,
+      quantity: 8,
+      blendMode: 'ADD',
+      tint: 0xff6666,
+    });
+    
+    // 自動銷毀粒子發射器
+    this.scene.time.delayedCall(500, () => {
+      particles.destroy();
+    });
   }
 }

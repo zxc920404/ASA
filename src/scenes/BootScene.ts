@@ -9,6 +9,58 @@ export class BootScene extends Phaser.Scene {
     this.createLoadingBar();
     this.generatePlaceholderTextures();
 
+    // === Texture Atlas (Sprite Atlas) ===
+    // Load game atlas if available, otherwise use placeholder textures
+    this.load.on('loaderror', (file: Phaser.Loader.File) => {
+      console.warn(`Failed to load: ${file.key} from ${file.url}`);
+    });
+
+    // Main game atlas containing all sprites
+    this.load.atlas(
+      'game-atlas',
+      'assets/sprites/game-atlas.png',
+      'assets/sprites/game-atlas.json'
+    );
+
+    // === Tilemap JSON ===
+    // Forest map
+    this.load.tilemapTiledJSON('map-forest', 'assets/tilemaps/forest.json');
+    this.load.image('tileset-forest', 'assets/tilemaps/tileset-forest.png');
+
+    // Cemetery map
+    this.load.tilemapTiledJSON('map-cemetery', 'assets/tilemaps/cemetery.json');
+    this.load.image('tileset-cemetery', 'assets/tilemaps/tileset-cemetery.png');
+
+    // === Audio Files ===
+    // Background Music (BGM)
+    this.load.audio('bgm-forest', 'assets/audio/bgm/forest.mp3');
+    this.load.audio('bgm-cemetery', 'assets/audio/bgm/cemetery.mp3');
+    this.load.audio('bgm-menu', 'assets/audio/bgm/menu.mp3');
+
+    // Sound Effects (SFX)
+    // Weapon sounds
+    this.load.audio('sfx-knife', 'assets/audio/sfx/knife.mp3');
+    this.load.audio('sfx-wand', 'assets/audio/sfx/wand.mp3');
+    this.load.audio('sfx-whip', 'assets/audio/sfx/whip.mp3');
+    this.load.audio('sfx-axe', 'assets/audio/sfx/axe.mp3');
+    this.load.audio('sfx-garlic', 'assets/audio/sfx/garlic.mp3');
+    this.load.audio('sfx-holywater', 'assets/audio/sfx/holywater.mp3');
+
+    // Enemy sounds
+    this.load.audio('sfx-enemy-hit', 'assets/audio/sfx/enemy-hit.mp3');
+    this.load.audio('sfx-enemy-death', 'assets/audio/sfx/enemy-death.mp3');
+
+    // Player sounds
+    this.load.audio('sfx-player-hit', 'assets/audio/sfx/player-hit.mp3');
+    this.load.audio('sfx-player-death', 'assets/audio/sfx/player-death.mp3');
+
+    // UI sounds
+    this.load.audio('sfx-levelup', 'assets/audio/sfx/levelup.mp3');
+    this.load.audio('sfx-pickup', 'assets/audio/sfx/pickup.mp3');
+    this.load.audio('sfx-button-click', 'assets/audio/sfx/button-click.mp3');
+    this.load.audio('sfx-weapon-evolve', 'assets/audio/sfx/weapon-evolve.mp3');
+
+    // === JSON Configuration Files ===
     // Use Phaser's native loader so the scene waits for all JSON to finish
     // before calling create(). This prevents the race condition where
     // create() transitions to MainMenu before data is cached.

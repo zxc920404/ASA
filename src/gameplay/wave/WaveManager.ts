@@ -29,8 +29,8 @@ const STAT_GROWTH_RATE = 0.07;    // 7%
 const SPEED_BOOST_INTERVAL = 120; // 每 2 分鐘
 const SPEED_BOOST_RATE = 0.10;    // 10%
 const UNLOCK_INTERVAL = 180;      // 每 3 分鐘
-const BASE_SPAWN_INTERVAL = 1.8;  // 基礎生成間隔（秒）
-const BASE_SPAWN_COUNT = 3;       // 基礎每次生成數量
+const BASE_SPAWN_INTERVAL = 0.8;  // 基礎生成間隔（秒）- 從 1.8 改為 0.8，更頻繁
+const BASE_SPAWN_COUNT = 8;       // 基礎每次生成數量 - 從 3 改為 8，更多敵人
 
 export class WaveManager {
   private spawner: EnemySpawner;
@@ -85,8 +85,8 @@ export class WaveManager {
   }
 
   private spawnWaveEnemies(gameTime: number): void {
-    // 生成數量隨時間微增
-    const extraCount = Math.floor(gameTime / 120); // 每 2 分鐘 +1
+    // 生成數量隨時間快速增加
+    const extraCount = Math.floor(gameTime / 60); // 每 1 分鐘 +1（從 120 改為 60）
     const count = BASE_SPAWN_COUNT + extraCount;
 
     // 從已解鎖的怪物中隨機選擇

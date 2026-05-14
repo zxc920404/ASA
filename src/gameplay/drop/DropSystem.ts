@@ -11,6 +11,7 @@ export class XPGem implements PoolableObject {
   readonly sprite: Phaser.GameObjects.Sprite;
   xpValue: number = 1;
   private isActive: boolean = false;
+  private glowCircle?: Phaser.GameObjects.Graphics;
 
   constructor(scene: Phaser.Scene) {
     this.sprite = scene.add.sprite(0, 0, 'xp_gem');
@@ -20,6 +21,11 @@ export class XPGem implements PoolableObject {
     scene.physics.add.existing(this.sprite);
     (this.sprite.body as Phaser.Physics.Arcade.Body).setCircle(8);
     this.gameObject = this.sprite;
+    
+    // 創建發光效果
+    this.glowCircle = scene.add.graphics();
+    this.glowCircle.setVisible(false);
+    this.glowCircle.setDepth(this.sprite.depth - 1);
   }
 
   activate(x: number, y: number, xpValue: number = 1): void {
@@ -29,6 +35,12 @@ export class XPGem implements PoolableObject {
     this.sprite.setVisible(true);
     this.sprite.setActive(true);
     (this.sprite.body as Phaser.Physics.Arcade.Body).enable = true;
+    
+    // 顯示發光效果
+    if (this.glowCircle) {
+      this.glowCircle.setVisible(true);
+      this.updateGlow();
+    }
   }
 
   deactivate(): void {
@@ -37,6 +49,10 @@ export class XPGem implements PoolableObject {
     this.sprite.setActive(false);
     (this.sprite.body as Phaser.Physics.Arcade.Body).enable = false;
     (this.sprite.body as Phaser.Physics.Arcade.Body).setVelocity(0, 0);
+    
+    if (this.glowCircle) {
+      this.glowCircle.setVisible(false);
+    }
   }
 
   /** Attract toward player */
@@ -49,6 +65,19 @@ export class XPGem implements PoolableObject {
       const body = this.sprite.body as Phaser.Physics.Arcade.Body;
       body.setVelocity((dx / dist) * speed, (dy / dist) * speed);
     }
+    
+    // 更新發光位置
+    this.updateGlow();
+  }
+  
+  private updateGlow(): void {
+    if (!this.glowCircle || !this.isActive) return;
+    
+    this.glowCircle.clear();
+    this.glowCircle.fillStyle(0x44aaff, 0.3);
+    this.glowCircle.fillCircle(this.sprite.x, this.sprite.y, 16);
+    this.glowCircle.fillStyle(0x88ccff, 0.5);
+    this.glowCircle.fillCircle(this.sprite.x, this.sprite.y, 10);
   }
 
   get active(): boolean { return this.isActive; }
