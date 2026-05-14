@@ -53,7 +53,7 @@ export class GameScene extends Phaser.Scene {
 
   // HUD texts
   private timeText!: Phaser.GameObjects.Text;
-  private hpText!: Phaser.GameObjects.Text;
+  private hpText!: Phaser.GameObjects.Graphics; // 改為 Graphics 用於繪製血條
   private levelText!: Phaser.GameObjects.Text;
   private killText!: Phaser.GameObjects.Text;
   // XP bar
@@ -687,41 +687,99 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createHUD(): void {
-    // 左上角狀態面板背景
-    const hudBg = this.add.graphics().setScrollFactor(0).setDepth(98);
-    hudBg.fillStyle(0x000000, 0.6);
-    hudBg.fillRoundedRect(5, 5, 200, 110, 8);
-    hudBg.lineStyle(2, 0x444466, 0.8);
-    hudBg.strokeRoundedRect(5, 5, 200, 110, 8);
-    
-    const style: Phaser.Types.GameObjects.Text.TextStyle = {
-      fontSize: '16px', 
-      color: '#ffffff',
-      fontStyle: 'bold',
-    };
-    
-    this.timeText = this.add.text(15, 15, '', style).setScrollFactor(0).setDepth(100);
-    this.hpText = this.add.text(15, 41, '', style).setScrollFactor(0).setDepth(100);
-    this.levelText = this.add.text(15, 67, '', style).setScrollFactor(0).setDepth(100);
-    this.killText = this.add.text(15, 93, '', style).setScrollFactor(0).setDepth(100);
-
-    // XP 經驗值進度條（螢幕頂部全寬，更粗更明顯）
     const camW = this.cameras.main.width;
+    
+    // === 頂部 XP 經驗條（全寬，黃色漸層）===
     this.xpBarBg = this.add.graphics().setScrollFactor(0).setDepth(99);
-    this.xpBarBg.fillStyle(0x1a1a2e, 0.9);
-    this.xpBarBg.fillRect(0, 0, camW, 12);
-    this.xpBarBg.lineStyle(2, 0x444466, 0.8);
-    this.xpBarBg.strokeRect(0, 0, camW, 12);
+    this.xpBarBg.fillStyle(0x1a1a2e, 0.95);
+    this.xpBarBg.fillRect(0, 0, camW, 18);
+    this.xpBarBg.lineStyle(2, 0x665522, 1);
+    this.xpBarBg.strokeRect(0, 0, camW, 18);
 
     this.xpBarFill = this.add.graphics().setScrollFactor(0).setDepth(100);
 
-    this.xpText = this.add.text(camW - 15, 2, '', {
-      fontSize: '14px', 
-      color: '#aaddff',
+    this.xpText = this.add.text(camW / 2, 4, '', {
+      fontSize: '13px', 
+      color: '#ffee88',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 4,
+    }).setScrollFactor(0).setDepth(101).setOrigin(0.5, 0);
+
+    // === 左上角狀態面板 ===
+    const panelX = 12;
+    const panelY = 28;
+    const panelW = 240;
+    const panelH = 140;
+    
+    // 面板背景（深色半透明，帶漸層邊框）
+    const hudBg = this.add.graphics().setScrollFactor(0).setDepth(98);
+    hudBg.fillStyle(0x0a0a1a, 0.85);
+    hudBg.fillRoundedRect(panelX, panelY, panelW, panelH, 10);
+    // 漸層邊框效果
+    hudBg.lineStyle(3, 0x4466aa, 0.9);
+    hudBg.strokeRoundedRect(panelX, panelY, panelW, panelH, 10);
+    hudBg.lineStyle(1, 0x6688cc, 0.6);
+    hudBg.strokeRoundedRect(panelX + 2, panelY + 2, panelW - 4, panelH - 4, 8);
+    
+    // 文字樣式（帶陰影和描邊）
+    const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+      fontSize: '15px', 
+      color: '#ffffff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 4,
+    };
+    
+    const labelStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+      fontSize: '12px', 
+      color: '#aaaaaa',
+      stroke: '#000000',
+      strokeThickness: 3,
+    };
+    
+    // 時間
+    const timeY = panelY + 15;
+    this.add.text(panelX + 15, timeY, '⏱ 時間', labelStyle).setScrollFactor(0).setDepth(100);
+    this.timeText = this.add.text(panelX + 85, timeY, '', textStyle).setScrollFactor(0).setDepth(100);
+    
+    // 等級
+    const levelY = panelY + 40;
+    this.add.text(panelX + 15, levelY, '⭐ 等級', labelStyle).setScrollFactor(0).setDepth(100);
+    this.levelText = this.add.text(panelX + 85, levelY, '', textStyle).setScrollFactor(0).setDepth(100);
+    
+    // 擊殺數
+    const killY = panelY + 65;
+    this.add.text(panelX + 15, killY, '💀 擊殺', labelStyle).setScrollFactor(0).setDepth(100);
+    this.killText = this.add.text(panelX + 85, killY, '', textStyle).setScrollFactor(0).setDepth(100);
+    
+    // HP 血條（紅色漸層）
+    const hpY = panelY + 95;
+    this.add.text(panelX + 15, hpY, '❤ 生命', labelStyle).setScrollFactor(0).setDepth(100);
+    
+    // HP 條背景
+    const hpBarX = panelX + 15;
+    const hpBarY = hpY + 20;
+    const hpBarW = panelW - 30;
+    const hpBarH = 16;
+    
+    const hpBarBg = this.add.graphics().setScrollFactor(0).setDepth(99);
+    hpBarBg.fillStyle(0x330000, 0.9);
+    hpBarBg.fillRoundedRect(hpBarX, hpBarY, hpBarW, hpBarH, 4);
+    hpBarBg.lineStyle(2, 0x660000, 1);
+    hpBarBg.strokeRoundedRect(hpBarX, hpBarY, hpBarW, hpBarH, 4);
+    
+    // HP 條填充（會在 updateHUD 中繪製）
+    this.hpText = this.add.graphics().setScrollFactor(0).setDepth(100);
+    
+    // HP 數值文字
+    this.add.text(hpBarX + hpBarW / 2, hpBarY + hpBarH / 2, '', {
+      fontSize: '12px',
+      color: '#ffffff',
       fontStyle: 'bold',
       stroke: '#000000',
       strokeThickness: 3,
-    }).setScrollFactor(0).setDepth(101).setOrigin(1, 0);
+    }).setScrollFactor(0).setDepth(101).setOrigin(0.5, 0.5).setName('hpValueText');
 
     // 裝備欄 + 能力欄（螢幕底部）
     this.equipmentContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
@@ -733,52 +791,75 @@ export class GameScene extends Phaser.Scene {
 
     const camW = this.cameras.main.width;
     const camH = this.cameras.main.height;
-    const slotSize = 36;
-    const slotGap = 4;
+    const slotSize = 42; // 增大格子
+    const slotGap = 6;
     const slotsPerRow = 6;
     const totalWidth = slotsPerRow * (slotSize + slotGap) - slotGap;
     const startX = (camW - totalWidth) / 2;
-    const weaponY = camH - slotSize * 2 - slotGap - 10;
-    const passiveY = camH - slotSize - 8;
+    const weaponY = camH - slotSize * 2 - slotGap - 15;
+    const passiveY = camH - slotSize - 12;
 
-    // 武器欄標籤
-    const weaponLabel = this.add.text(startX - 2, weaponY - 16, '⚔ 武器', {
-      fontSize: '11px', color: '#ffaa44',
+    // 武器欄標籤（更明顯）
+    const weaponLabel = this.add.text(startX - 2, weaponY - 20, '⚔ 武器', {
+      fontSize: '13px', 
+      color: '#ffaa44',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3,
     }).setScrollFactor(0);
     this.equipmentContainer.add(weaponLabel);
 
     // 能力欄標籤
-    const passiveLabel = this.add.text(startX - 2, passiveY - 16, '💎 能力', {
-      fontSize: '11px', color: '#44aaff',
+    const passiveLabel = this.add.text(startX - 2, passiveY - 20, '💎 能力', {
+      fontSize: '13px', 
+      color: '#44aaff',
+      fontStyle: 'bold',
+      stroke: '#000000',
+      strokeThickness: 3,
     }).setScrollFactor(0);
     this.equipmentContainer.add(passiveLabel);
 
     const weapons = this.weaponSystem.getWeapons();
     const passives = this.weaponSystem.getPassives();
 
-    // 繪製 6 格武器欄
+    // 繪製 6 格武器欄（更清楚的邊框）
     for (let i = 0; i < slotsPerRow; i++) {
       const x = startX + i * (slotSize + slotGap) + slotSize / 2;
       const y = weaponY + slotSize / 2;
 
-      // 格子背景
-      const bg = this.add.rectangle(x, y, slotSize, slotSize, 0x1a1a2e, 0.8)
-        .setStrokeStyle(1, i < weapons.length ? 0xffaa44 : 0x333355)
+      // 格子背景（雙層邊框）
+      const bg = this.add.rectangle(x, y, slotSize, slotSize, 0x1a1a2e, 0.9)
+        .setStrokeStyle(3, i < weapons.length ? 0xffaa44 : 0x333355, 1)
         .setScrollFactor(0);
       this.equipmentContainer.add(bg);
+      
+      // 內層邊框
+      const innerBorder = this.add.rectangle(x, y, slotSize - 6, slotSize - 6, 0x000000, 0)
+        .setStrokeStyle(1, i < weapons.length ? 0xffcc66 : 0x222233, 0.6)
+        .setScrollFactor(0);
+      this.equipmentContainer.add(innerBorder);
 
       if (i < weapons.length) {
         const w = weapons[i];
-        // 武器名稱首字
+        // 武器名稱首字（更大更清楚）
         const initial = w.config.displayName.charAt(0);
-        const txt = this.add.text(x, y - 4, initial, {
-          fontSize: '14px', color: '#ffaa44', fontStyle: 'bold',
+        const txt = this.add.text(x, y - 6, initial, {
+          fontSize: '18px', 
+          color: '#ffaa44', 
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 3,
         }).setOrigin(0.5).setScrollFactor(0);
-        // 等級
-        const lvl = this.add.text(x, y + 10, `${w.level}`, {
-          fontSize: '9px', color: '#cccccc',
+        
+        // 等級（帶背景）
+        const lvlBg = this.add.rectangle(x, y + 12, 24, 14, 0x000000, 0.7)
+          .setScrollFactor(0);
+        const lvl = this.add.text(x, y + 12, `Lv${w.level}`, {
+          fontSize: '10px', 
+          color: '#ffffff',
+          fontStyle: 'bold',
         }).setOrigin(0.5).setScrollFactor(0);
-        this.equipmentContainer.add([txt, lvl]);
+        this.equipmentContainer.add([lvlBg, txt, lvl]);
       }
     }
 
@@ -787,21 +868,38 @@ export class GameScene extends Phaser.Scene {
       const x = startX + i * (slotSize + slotGap) + slotSize / 2;
       const y = passiveY + slotSize / 2;
 
-      const bg = this.add.rectangle(x, y, slotSize, slotSize, 0x1a1a2e, 0.8)
-        .setStrokeStyle(1, i < passives.length ? 0x44aaff : 0x333355)
+      // 格子背景（雙層邊框）
+      const bg = this.add.rectangle(x, y, slotSize, slotSize, 0x1a1a2e, 0.9)
+        .setStrokeStyle(3, i < passives.length ? 0x44aaff : 0x333355, 1)
         .setScrollFactor(0);
       this.equipmentContainer.add(bg);
+      
+      // 內層邊框
+      const innerBorder = this.add.rectangle(x, y, slotSize - 6, slotSize - 6, 0x000000, 0)
+        .setStrokeStyle(1, i < passives.length ? 0x66ccff : 0x222233, 0.6)
+        .setScrollFactor(0);
+      this.equipmentContainer.add(innerBorder);
 
       if (i < passives.length) {
         const p = passives[i];
         const initial = p.config.displayName.charAt(0);
-        const txt = this.add.text(x, y - 4, initial, {
-          fontSize: '14px', color: '#44aaff', fontStyle: 'bold',
+        const txt = this.add.text(x, y - 6, initial, {
+          fontSize: '18px', 
+          color: '#44aaff', 
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 3,
         }).setOrigin(0.5).setScrollFactor(0);
-        const lvl = this.add.text(x, y + 10, `${p.level}`, {
-          fontSize: '9px', color: '#cccccc',
+        
+        // 等級（帶背景）
+        const lvlBg = this.add.rectangle(x, y + 12, 24, 14, 0x000000, 0.7)
+          .setScrollFactor(0);
+        const lvl = this.add.text(x, y + 12, `Lv${p.level}`, {
+          fontSize: '10px', 
+          color: '#ffffff',
+          fontStyle: 'bold',
         }).setOrigin(0.5).setScrollFactor(0);
-        this.equipmentContainer.add([txt, lvl]);
+        this.equipmentContainer.add([lvlBg, txt, lvl]);
       }
     }
   }
@@ -811,37 +909,85 @@ export class GameScene extends Phaser.Scene {
     const remaining = Math.max(0, GAME_DURATION - this.gameTime);
     const mins = Math.floor(remaining / 60);
     const secs = Math.floor(remaining % 60);
-    this.timeText.setText(`⏱ ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
+    this.timeText.setText(`${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
     
-    // HP 條顯示（帶顏色變化）
-    const hpPercent = this.player.currentHP / this.player.maxHP;
-    const hpColor = hpPercent > 0.5 ? '❤' : hpPercent > 0.25 ? '🧡' : '💔';
-    this.hpText.setText(`${hpColor} ${Math.ceil(this.player.currentHP)} / ${Math.ceil(this.player.maxHP)}`);
+    // 等級
+    this.levelText.setText(`${this.levelUpSystem.currentLevel}`);
     
-    this.levelText.setText(`⭐ Lv ${this.levelUpSystem.currentLevel}`);
-    this.killText.setText(`💀 ${this.killCount}`);
+    // 擊殺數
+    this.killText.setText(`${this.killCount}`);
 
-    // 更新 XP 進度條（漸層效果）
+    // === 更新 HP 血條（紅色漸層）===
+    const hpPercent = this.player.currentHP / this.player.maxHP;
+    const panelX = 12;
+    const panelY = 28;
+    const panelW = 240;
+    const hpBarX = panelX + 15;
+    const hpBarY = panelY + 95 + 20;
+    const hpBarW = panelW - 30;
+    const hpBarH = 16;
+    
+    this.hpText.clear();
+    
+    // 繪製 HP 條漸層（紅色到深紅色）
+    const hpFillW = hpBarW * hpPercent;
+    for (let i = 0; i < hpFillW; i++) {
+      const ratio = i / hpBarW;
+      // 根據血量百分比改變顏色
+      let r, g, b;
+      if (hpPercent > 0.5) {
+        // 健康：亮紅色到橙紅色
+        r = 255;
+        g = Math.floor(80 - ratio * 40);
+        b = 20;
+      } else if (hpPercent > 0.25) {
+        // 警告：橙紅色
+        r = 255;
+        g = Math.floor(60 - ratio * 30);
+        b = 0;
+      } else {
+        // 危險：深紅色閃爍
+        const flash = Math.sin(Date.now() / 200) * 0.3 + 0.7;
+        r = Math.floor(200 * flash);
+        g = 0;
+        b = 0;
+      }
+      const color = (r << 16) | (g << 8) | b;
+      this.hpText.fillStyle(color, 1);
+      this.hpText.fillRect(hpBarX + 2 + i, hpBarY + 2, 1, hpBarH - 4);
+    }
+    
+    // HP 數值文字
+    const hpValueText = this.children.getByName('hpValueText') as Phaser.GameObjects.Text;
+    if (hpValueText) {
+      hpValueText.setText(`${Math.ceil(this.player.currentHP)} / ${Math.ceil(this.player.maxHP)}`);
+      hpValueText.setPosition(hpBarX + hpBarW / 2, hpBarY + hpBarH / 2);
+    }
+
+    // === 更新 XP 經驗條（黃色漸層）===
     const xp = this.levelUpSystem.currentXP;
     const xpNeeded = this.levelUpSystem.xpToNextLevel;
-    const ratio = xpNeeded > 0 ? Math.min(xp / xpNeeded, 1) : 0;
+    const xpRatio = xpNeeded > 0 ? Math.min(xp / xpNeeded, 1) : 0;
     const camW = this.cameras.main.width;
 
     this.xpBarFill.clear();
     
-    // 繪製漸層 XP 條
-    const barWidth = camW * ratio;
-    for (let i = 0; i < barWidth; i++) {
+    // 繪製黃色漸層 XP 條
+    const xpBarWidth = camW * xpRatio;
+    for (let i = 0; i < xpBarWidth; i++) {
       const colorRatio = i / camW;
-      const r = Math.floor(68 + colorRatio * 100);
-      const g = Math.floor(170 + colorRatio * 85);
-      const b = 255;
+      // 金黃色漸層
+      const r = Math.floor(255 - colorRatio * 50);
+      const g = Math.floor(200 - colorRatio * 50);
+      const b = Math.floor(50 + colorRatio * 100);
       const color = (r << 16) | (g << 8) | b;
       this.xpBarFill.fillStyle(color, 1);
-      this.xpBarFill.fillRect(i, 2, 1, 8);
+      this.xpBarFill.fillRect(i, 3, 1, 12);
     }
 
-    this.xpText.setText(`XP ${Math.floor(xp)} / ${Math.floor(xpNeeded)}`);
+    // XP 文字（顯示等級和百分比）
+    const xpPercent = Math.floor(xpRatio * 100);
+    this.xpText.setText(`Lv ${this.levelUpSystem.currentLevel}  |  ${xpPercent}%`);
 
     // 更新裝備欄 UI
     this.updateEquipmentSlots();
