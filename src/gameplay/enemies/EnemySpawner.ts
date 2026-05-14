@@ -6,8 +6,10 @@ import { EnemyBase } from './EnemyBase';
 import { eventBus } from '../../core/events/EventBus';
 import { GameEventNames } from '../../core/events/GameEvents';
 
-const MAX_ENEMIES = 200;
-const OFFSCREEN_SKIP_THRESHOLD = 100;
+// 效能優化：降低敵人上限
+const MAX_ENEMIES = 100; // 從 200 降到 100
+const OFFSCREEN_SKIP_THRESHOLD = 60; // 從 100 降到 60
+const OFFSCREEN_UPDATE_INTERVAL = 5; // 螢幕外敵人每 5 幀更新一次
 
 export class EnemySpawner {
   private scene: Phaser.Scene;
@@ -72,10 +74,13 @@ export class EnemySpawner {
     for (const enemy of this.activeEnemies) {
       if (enemy.currentHP <= 0) continue;
 
-      // Skip offscreen enemies every other frame when count > threshold
+      // 效能優化：螢幕外敵人降低更新頻率
       const onScreen = camBounds.contains(enemy.sprite.x, enemy.sprite.y);
-      if (!onScreen && this.activeEnemies.size > OFFSCREEN_SKIP_THRESHOLD && this.frameCounter % 2 !== 0) {
-        continue;
+      if (!onScreen && this.activeEnemies.size > OFFSCREEN_SKIP_THRESHOLD) {
+        // 螢幕外敵人每 5 幀更新一次
+        if (this.frameCounter % OFFSCREEN_UPDATE_INTERVAL !== 0) {
+          continue;
+        }
       }
 
       enemy.setTarget(this.playerPos);

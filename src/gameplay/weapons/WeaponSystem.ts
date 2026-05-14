@@ -22,6 +22,11 @@ export class WeaponSystem {
   private playerPos: Phaser.Math.Vector2;
   private getEnemies: () => { sprite: Phaser.GameObjects.Sprite }[];
   private attackPowerMultiplier: () => number;
+  
+  // 效能優化：快取最近敵人方向
+  private cachedDirection: Phaser.Math.Vector2 = new Phaser.Math.Vector2(1, 0);
+  private directionUpdateTimer: number = 0;
+  private directionUpdateInterval: number = 200; // 每 200ms 更新一次目標方向
 
   constructor(
     scene: Phaser.Scene,
@@ -65,23 +70,28 @@ export class WeaponSystem {
     const enemies = this.getEnemies();
     const hasTarget = enemies.length > 0;
 
-    // Find nearest enemy direction
-    let direction = new Phaser.Math.Vector2(1, 0);
-    if (hasTarget) {
-      let minDist = Infinity;
-      for (const enemy of enemies) {
-        const dx = enemy.sprite.x - this.playerPos.x;
-        const dy = enemy.sprite.y - this.playerPos.y;
-        const dist = dx * dx + dy * dy;
-        if (dist < minDist) {
-          minDist = dist;
-          direction.set(dx, dy).normalize();
+    // 效能優化：降低目標選擇頻率，從每幀更新改為每 200ms 更新
+    this.directionUpdateTimer += delta;
+    if (this.directionUpdateTimer >= this.directionUpdateInterval) {
+      this.directionUpdateTimer = 0;
+      
+      // Find nearest enemy direction
+      if (hasTarget) {
+        let minDist = Infinity;
+        for (const enemy of enemies) {
+          const dx = enemy.sprite.x - this.playerPos.x;
+          const dy = enemy.sprite.y - this.playerPos.y;
+          const distSq = dx * dx + dy * dy; // 使用平方距離避免 sqrt
+          if (distSq < minDist) {
+            minDist = distSq;
+            this.cachedDirection.set(dx, dy).normalize();
+          }
         }
       }
     }
 
     for (const weapon of this.weapons) {
-      weapon.tryAttack(delta, this.playerPos, direction, hasTarget);
+      weapon.tryAttack(delta, this.playerPos, this.cachedDirection, hasTarget);
     }
   }
 

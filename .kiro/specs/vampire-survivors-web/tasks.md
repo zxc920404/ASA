@@ -1,4 +1,10 @@
-# 實作任務清單
+# Implementation Plan: Vampire Survivors Web
+
+## Overview
+
+This implementation plan converts the Vampire Survivors-like game design into a series of incremental coding tasks. The plan follows a phased approach starting with project initialization, core systems, gameplay mechanics, UI, and finally testing and mobile deployment. Each task builds on previous work to ensure continuous integration and validation.
+
+## Tasks
 
 ## 第 1 階段：專案初始化與基礎架構
 
@@ -272,3 +278,145 @@
   - [ ] 16.1.4 配置 WebView 設定確保 Phaser 正常渲染
   - [ ] 16.1.5 建立建置腳本（npm run build → cap sync → gradle build）
   - [ ] 16.1.6 設定正式簽署金鑰與 AAB 簽署流程
+
+
+## Notes
+
+- Tasks marked with `*` are optional and can be skipped for faster MVP
+- Each task references specific requirements for traceability
+- Checkpoints ensure incremental validation
+- Property tests validate universal correctness properties
+- Unit tests validate specific examples and edge cases
+- The implementation uses TypeScript with Phaser.js game engine
+- Mobile deployment uses Capacitor for Android platform
+- All game objects use Object Pool pattern for performance
+- The game follows Vampire Survivors gameplay mechanics with auto-attacking weapons
+
+## Task Dependency Graph
+
+```json
+{
+  "waves": [
+    {
+      "id": 0,
+      "tasks": ["1.1.1", "1.1.2", "1.1.3", "1.1.4", "1.1.5"]
+    },
+    {
+      "id": 1,
+      "tasks": ["1.2.1", "1.2.2"]
+    },
+    {
+      "id": 2,
+      "tasks": ["1.3.1", "1.3.2", "1.3.3", "1.3.4", "1.3.5", "1.3.6", "1.3.7", "1.4.1", "1.4.2", "1.4.3", "1.4.4", "1.4.5", "1.4.6", "1.4.7"]
+    },
+    {
+      "id": 3,
+      "tasks": ["2.1.1", "2.1.2", "2.1.3"]
+    },
+    {
+      "id": 4,
+      "tasks": ["2.2.1", "2.2.2", "2.2.3", "2.2.4", "2.3.1", "2.3.2", "2.3.3", "2.3.4", "2.3.5", "2.3.6"]
+    },
+    {
+      "id": 5,
+      "tasks": ["3.1.1", "3.1.2", "3.1.3"]
+    },
+    {
+      "id": 6,
+      "tasks": ["3.2.1", "3.2.2", "3.2.3", "3.2.4", "3.2.5", "3.2.6"]
+    },
+    {
+      "id": 7,
+      "tasks": ["3.3.1", "3.3.2", "3.3.3", "3.3.4", "3.3.5", "3.3.6"]
+    },
+    {
+      "id": 8,
+      "tasks": ["4.1.1", "4.1.2"]
+    },
+    {
+      "id": 9,
+      "tasks": ["4.2.1", "4.2.2", "4.2.3", "4.2.4", "4.3.1", "4.3.2"]
+    },
+    {
+      "id": 10,
+      "tasks": ["5.1.1", "5.1.2", "5.1.3", "5.1.4", "5.1.5", "5.1.6"]
+    },
+    {
+      "id": 11,
+      "tasks": ["6.1.1", "6.1.2", "6.1.3", "6.1.4", "6.1.5"]
+    },
+    {
+      "id": 12,
+      "tasks": ["6.2.1", "6.2.2", "6.2.3", "6.2.4", "6.2.5", "6.2.6"]
+    },
+    {
+      "id": 13,
+      "tasks": ["6.3.1", "6.3.2", "6.3.3"]
+    },
+    {
+      "id": 14,
+      "tasks": ["7.1.1", "7.1.2", "7.1.3", "7.1.4"]
+    },
+    {
+      "id": 15,
+      "tasks": ["7.2.1", "7.2.2", "7.2.3", "7.2.4"]
+    },
+    {
+      "id": 16,
+      "tasks": ["8.1.1", "8.1.2", "8.1.3", "8.1.4"]
+    },
+    {
+      "id": 17,
+      "tasks": ["8.2.1", "8.2.2", "8.2.3", "8.2.4"]
+    },
+    {
+      "id": 18,
+      "tasks": ["9.1.1", "9.1.2", "9.1.3", "9.1.4", "9.1.5", "9.1.6"]
+    },
+    {
+      "id": 19,
+      "tasks": ["10.1.1", "10.1.2", "10.1.3", "10.1.4", "10.1.5"]
+    },
+    {
+      "id": 20,
+      "tasks": ["10.2.1", "10.2.2", "10.3.1", "10.3.2", "10.4.1", "10.5.1", "10.5.2", "10.6.1"]
+    },
+    {
+      "id": 21,
+      "tasks": ["11.1.1", "11.1.2", "11.1.3", "11.1.4", "11.1.5"]
+    },
+    {
+      "id": 22,
+      "tasks": ["11.2.1", "11.2.2", "11.2.3", "11.2.4", "11.2.5"]
+    },
+    {
+      "id": 23,
+      "tasks": ["12.1.1", "12.1.2"]
+    },
+    {
+      "id": 24,
+      "tasks": ["12.2.1", "12.2.2", "12.2.3"]
+    },
+    {
+      "id": 25,
+      "tasks": ["13.1.1", "13.1.2", "13.1.3"]
+    },
+    {
+      "id": 26,
+      "tasks": ["14.1.1", "14.1.2", "14.1.3", "14.2.1", "14.2.2"]
+    },
+    {
+      "id": 27,
+      "tasks": ["15.1.1", "15.1.2", "15.1.3", "15.1.4", "15.1.5", "15.1.6", "15.1.7", "15.1.8", "15.1.9", "15.1.10", "15.1.11", "15.1.12", "15.1.13", "15.1.14", "15.1.15", "15.1.16", "15.1.17"]
+    },
+    {
+      "id": 28,
+      "tasks": ["15.2.1", "15.2.2", "15.2.3", "15.2.4", "15.2.5", "15.2.6"]
+    },
+    {
+      "id": 29,
+      "tasks": ["16.1.1", "16.1.2", "16.1.3", "16.1.4", "16.1.5", "16.1.6"]
+    }
+  ]
+}
+```

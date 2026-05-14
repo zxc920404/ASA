@@ -93,6 +93,9 @@ export class DropSystem {
   private ambientSpawnInterval: number = 3; // 每 3 秒生成一顆
   private mapWidth: number;
   private mapHeight: number;
+  
+  // 效能優化：限制場上經驗球數量
+  private readonly MAX_GEMS = 100;
 
   constructor(
     scene: Phaser.Scene,
@@ -124,11 +127,13 @@ export class DropSystem {
     const pickupRange = this.getPickupRange();
     const collectDist = 16;
 
-    // 地圖隨機生成經驗球
-    this.ambientSpawnTimer += delta / 1000;
-    if (this.ambientSpawnTimer >= this.ambientSpawnInterval) {
-      this.ambientSpawnTimer = 0;
-      this.spawnAmbientGem();
+    // 地圖隨機生成經驗球（效能優化：場上經驗球太多時停止生成）
+    if (this.activeGems.size < this.MAX_GEMS) {
+      this.ambientSpawnTimer += delta / 1000;
+      if (this.ambientSpawnTimer >= this.ambientSpawnInterval) {
+        this.ambientSpawnTimer = 0;
+        this.spawnAmbientGem();
+      }
     }
 
     for (const gem of this.activeGems) {
@@ -140,13 +145,13 @@ export class DropSystem {
 
       const dx = this.playerPos.x - gem.sprite.x;
       const dy = this.playerPos.y - gem.sprite.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      const distSq = dx * dx + dy * dy; // 使用平方距離避免 sqrt
 
-      if (dist < pickupRange) {
+      if (distSq < pickupRange * pickupRange) {
         gem.attractTo(this.playerPos.x, this.playerPos.y, 350);
       }
 
-      if (dist < collectDist) {
+      if (distSq < collectDist * collectDist) {
         const evt: XPCollectedEvent = { amount: gem.xpValue };
         eventBus.emit(GameEventNames.XP_COLLECTED, evt);
         this.gemPool.despawn(gem);
@@ -171,6 +176,9 @@ export class DropSystem {
   }
 
   private spawnXPGem(x: number, y: number, xpValue: number): void {
+    // 效能優化：場上經驗球達到上限時不再生成
+    if (this.activeGems.size >= this.MAX_GEMS) return;
+    
     const gem = this.gemPool.spawn(x, y, xpValue);
     this.activeGems.add(gem);
   }

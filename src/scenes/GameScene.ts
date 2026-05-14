@@ -326,22 +326,45 @@ export class GameScene extends Phaser.Scene {
   }
 
   private resolveEnemyCollisions(): void {
+    // 效能優化：降低碰撞檢測頻率，每 3 幀檢測一次
+    if (this.game.loop.frame % 3 !== 0) return;
+    
     const enemies = this.enemySpawner.getActiveEnemies();
     const len = enemies.length;
-    // 簡單的 O(n²) 碰撞推擠，只處理螢幕附近的敵人
-    for (let i = 0; i < len; i++) {
-      const a = enemies[i];
+    
+    // 效能優化：敵人太多時跳過碰撞檢測
+    if (len > 80) return;
+    
+    // 效能優化：只處理螢幕內的敵人
+    const cam = this.cameras.main;
+    const camBounds = new Phaser.Geom.Rectangle(
+      cam.scrollX, cam.scrollY,
+      cam.width, cam.height,
+    );
+    
+    const onScreenEnemies = enemies.filter(e => 
+      camBounds.contains(e.sprite.x, e.sprite.y)
+    );
+    
+    const screenLen = onScreenEnemies.length;
+    
+    // 簡單的 O(n²) 碰撞推擠，只處理螢幕內的敵人
+    for (let i = 0; i < screenLen; i++) {
+      const a = onScreenEnemies[i];
       if (a.currentHP <= 0) continue;
-      for (let j = i + 1; j < len; j++) {
-        const b = enemies[j];
+      
+      for (let j = i + 1; j < screenLen; j++) {
+        const b = onScreenEnemies[j];
         if (b.currentHP <= 0) continue;
 
         const dx = b.sprite.x - a.sprite.x;
         const dy = b.sprite.y - a.sprite.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
+        const distSq = dx * dx + dy * dy; // 使用平方距離避免 sqrt
         const minDist = a.config.bodySize + b.config.bodySize;
+        const minDistSq = minDist * minDist;
 
-        if (dist < minDist && dist > 0.1) {
+        if (distSq < minDistSq && distSq > 0.01) {
+          const dist = Math.sqrt(distSq);
           const overlap = (minDist - dist) / 2;
           const nx = dx / dist;
           const ny = dy / dist;
