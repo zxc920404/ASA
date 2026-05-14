@@ -56,7 +56,7 @@
 ## 第 3 階段：Phaser Scene 與基礎遊戲流程
 
 - [ ] 3.1 實作 BootScene（scenes/BootScene.ts）
-  - [ ] 3.1.1 preload() 載入 Texture Atlas、Tilemap JSON、音效檔案、JSON 設定檔
+  - [x] 3.1.1 preload() 載入 Texture Atlas、Tilemap JSON、音效檔案、JSON 設定檔
   - [ ] 3.1.2 建立載入進度條 UI
   - [ ] 3.1.3 create() 完成後切換至 MainMenuScene
 

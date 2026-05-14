@@ -82,26 +82,70 @@ export class BootScene extends Phaser.Scene {
 
   private createLoadingBar(): void {
     const { width, height } = this.scale;
-    const barBg = this.add.graphics();
-    barBg.fillStyle(0x333333, 1);
-    barBg.fillRect(width * 0.1, height / 2 - 2, width * 0.8, 34);
+    
+    // Title text
+    const titleText = this.add.text(width / 2, height / 2 - 80, 'Vampire Survivors', {
+      fontSize: '32px',
+      color: '#ff0000',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
 
-    const bar = this.add.graphics();
-    const loadingText = this.add.text(width / 2, height / 2 - 30, 'Loading...', {
+    // Loading text
+    const loadingText = this.add.text(width / 2, height / 2 - 40, 'Loading...', {
       fontSize: '20px',
       color: '#ffffff',
     }).setOrigin(0.5);
 
+    // Progress bar background (outer border)
+    const barBorder = this.add.graphics();
+    barBorder.lineStyle(3, 0xffffff, 1);
+    barBorder.strokeRect(width * 0.1 - 2, height / 2 - 2, width * 0.8 + 4, 34);
+
+    // Progress bar background (inner fill)
+    const barBg = this.add.graphics();
+    barBg.fillStyle(0x222222, 1);
+    barBg.fillRect(width * 0.1, height / 2, width * 0.8, 30);
+
+    // Progress bar fill
+    const bar = this.add.graphics();
+
+    // Percentage text
+    const percentText = this.add.text(width / 2, height / 2 + 15, '0%', {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+    }).setOrigin(0.5);
+
+    // File loading text
+    const fileText = this.add.text(width / 2, height / 2 + 50, '', {
+      fontSize: '14px',
+      color: '#aaaaaa',
+    }).setOrigin(0.5);
+
+    // Update progress bar on load progress
     this.load.on('progress', (value: number) => {
       bar.clear();
       bar.fillStyle(0x00ff00, 1);
-      bar.fillRect(width * 0.1 + 2, height / 2, (width * 0.8 - 4) * value, 30);
+      bar.fillRect(width * 0.1, height / 2, (width * 0.8) * value, 30);
+      
+      // Update percentage text
+      percentText.setText(`${Math.floor(value * 100)}%`);
     });
 
+    // Update file text on file load
+    this.load.on('fileprogress', (file: Phaser.Loader.File) => {
+      fileText.setText(`Loading: ${file.key}`);
+    });
+
+    // Clean up on complete
     this.load.on('complete', () => {
       bar.destroy();
       barBg.destroy();
+      barBorder.destroy();
       loadingText.destroy();
+      percentText.destroy();
+      fileText.destroy();
+      titleText.destroy();
     });
   }
 

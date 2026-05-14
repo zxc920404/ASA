@@ -138,10 +138,26 @@ describe('BootScene', () => {
       expect(mockLoad.on).toHaveBeenCalledWith('progress', expect.any(Function));
     });
 
+    it('should register fileprogress event handler for loading bar', () => {
+      scene.preload();
+      
+      expect(mockLoad.on).toHaveBeenCalledWith('fileprogress', expect.any(Function));
+    });
+
     it('should register complete event handler for loading bar', () => {
       scene.preload();
       
       expect(mockLoad.on).toHaveBeenCalledWith('complete', expect.any(Function));
+    });
+
+    it('should create loading bar UI elements', () => {
+      scene.preload();
+      
+      // Should create graphics for bar border, background, and fill
+      expect((scene as any).add.graphics).toHaveBeenCalled();
+      
+      // Should create text elements (title, loading text, percentage, file text)
+      expect((scene as any).add.text).toHaveBeenCalled();
     });
   });
 });

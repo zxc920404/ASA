@@ -425,27 +425,81 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createGround(): void {
-    // === 1. 平鋪草地背景 ===
+    // === 1. 檢查是否有草地背景圖片，如果沒有則生成 ===
+    if (!this.textures.exists('grass_bg')) {
+      // 生成草地背景紋理
+      this.generateGrassTexture();
+    }
+    
+    // === 2. 平鋪草地背景 ===
     // 使用 TileSprite 來平鋪背景圖片
     const grassBg = this.add.tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, 'grass_bg');
     grassBg.setOrigin(0, 0);
     grassBg.setDepth(-20);
     
-    // === 2. 半透明暗色 overlay 弱化重複感 ===
+    // === 3. 半透明暗色 overlay 弱化重複感 ===
     const overlay = this.add.graphics();
     overlay.fillStyle(0x0a0a0a, 0.25); // 深色半透明
     overlay.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
     overlay.setDepth(-15);
     
-    // === 3. 隨機裝飾物（草叢、石頭、陰影）===
+    // === 4. 隨機裝飾物（草叢、石頭、陰影）===
     this.createMapDecorations();
     
-    // === 4. 創建暗角效果（固定在螢幕上）===
+    // === 5. 創建暗角效果（固定在螢幕上）===
     this.vignette = this.add.graphics().setScrollFactor(0).setDepth(95);
     this.updateVignette();
     
-    // === 5. 創建漂浮粒子效果 ===
+    // === 6. 創建漂浮粒子效果 ===
     this.createAmbientParticles();
+  }
+  
+  private generateGrassTexture(): void {
+    // 生成 512x512 的草地紋理
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+    
+    // 基礎草地顏色（深綠到淺綠漸層）
+    const gradient = ctx.createLinearGradient(0, 0, 0, size);
+    gradient.addColorStop(0, '#2d5016');
+    gradient.addColorStop(0.5, '#3a6b1e');
+    gradient.addColorStop(1, '#2d5016');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    
+    // 添加草地紋理（隨機深淺綠色點）
+    for (let i = 0; i < 2000; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const radius = 1 + Math.random() * 3;
+      const brightness = 0.8 + Math.random() * 0.4;
+      
+      ctx.fillStyle = `rgba(${Math.floor(45 * brightness)}, ${Math.floor(90 * brightness)}, ${Math.floor(30 * brightness)}, ${0.3 + Math.random() * 0.4})`;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // 添加草叢紋理（小線條）
+    ctx.strokeStyle = 'rgba(30, 60, 20, 0.3)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 500; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const length = 3 + Math.random() * 8;
+      const angle = Math.random() * Math.PI * 2;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+      ctx.stroke();
+    }
+    
+    // 將 canvas 轉換為 Phaser texture
+    this.textures.addCanvas('grass_bg', canvas);
   }
   
   private createMapDecorations(): void {
