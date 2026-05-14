@@ -16,6 +16,7 @@ export class LevelUpSystem {
   private weaponSystem: WeaponSystem;
   private allWeaponConfigs: WeaponConfig[];
   private allPassiveConfigs: PassiveItemConfig[];
+  private startingWeaponId: string | null = null; // 記錄初始武器 ID
 
   currentXP: number = 0;
   currentLevel: number = 1;
@@ -28,11 +29,13 @@ export class LevelUpSystem {
     allWeaponConfigs: WeaponConfig[],
     allPassiveConfigs: PassiveItemConfig[],
     onLevelUp: (options: LevelUpOption[]) => void,
+    startingWeaponId?: string, // 新增參數：初始武器 ID
   ) {
     this.weaponSystem = weaponSystem;
     this.allWeaponConfigs = allWeaponConfigs;
     this.allPassiveConfigs = allPassiveConfigs;
     this.onLevelUp = onLevelUp;
+    this.startingWeaponId = startingWeaponId ?? null;
 
     eventBus.on<XPCollectedEvent>(GameEventNames.XP_COLLECTED, (e) => {
       this.addXP(e.amount);
@@ -128,7 +131,8 @@ export class LevelUpSystem {
     if (!weaponsFull) {
       const ownedIds = new Set(weapons.map(w => w.id));
       for (const cfg of this.allWeaponConfigs) {
-        if (!ownedIds.has(cfg.weaponId)) {
+        // 排除初始武器和已持有武器
+        if (!ownedIds.has(cfg.weaponId) && cfg.weaponId !== this.startingWeaponId) {
           newItemPool.push({
             type: 'new_weapon',
             id: cfg.weaponId,

@@ -5,11 +5,9 @@ import { PermanentUpgradeSystem, PERMANENT_UPGRADES } from '../gameplay/level-up
 
 const VERSION = '0.1.0';
 
-type PanelType = 'main' | 'character' | 'map' | 'upgrades' | 'settings';
+type PanelType = 'main' | 'upgrades' | 'settings';
 
 export class MainMenuScene extends Phaser.Scene {
-  private selectedCharacterId: string = 'char_swordsman';
-  private selectedMapId: string = 'forest';
   private musicVolume: number = 0.7;
   private sfxVolume: number = 1.0;
   private saveSystem!: SaveSystem;
@@ -69,8 +67,6 @@ export class MainMenuScene extends Phaser.Scene {
     // Draw current panel
     switch (this.currentPanel) {
       case 'main': this.drawMainMenu(w, h); break;
-      case 'character': this.drawCharacterSelect(w, h); break;
-      case 'map': this.drawMapSelect(w, h); break;
       case 'upgrades': this.drawUpgrades(w, h); break;
       case 'settings': this.drawSettings(w, h); break;
     }
@@ -94,8 +90,7 @@ export class MainMenuScene extends Phaser.Scene {
     const startY = h * 0.26;
 
     const buttons = [
-      { text: '▶  開始遊戲', cb: () => { this.currentPanel = 'map'; this.drawAll(); } },
-      { text: '👤  角色選擇', cb: () => { this.currentPanel = 'character'; this.drawAll(); } },
+      { text: '▶  開始遊戲', cb: () => { this.scale.removeAllListeners('resize'); this.scene.start('CharacterSelect'); } },
       { text: '💎  永久升級', cb: () => { this.currentPanel = 'upgrades'; this.drawAll(); } },
       { text: '⚙  設定', cb: () => { this.currentPanel = 'settings'; this.drawAll(); } },
     ];
@@ -106,76 +101,6 @@ export class MainMenuScene extends Phaser.Scene {
     this.add.text(cx, startY + buttons.length * gap + 10, `🪙 金幣：${gold}`, {
       fontSize: '13px', color: '#ffdd00',
     }).setOrigin(0.5);
-
-    this.add.text(cx, startY + buttons.length * gap + 28, `角色：${this.getCharName()} | 地圖：${this.getMapName()}`, {
-      fontSize: '11px', color: '#888899',
-    }).setOrigin(0.5);
-  }
-
-  private drawCharacterSelect(w: number, h: number): void {
-    const cx = w / 2;
-    const cardW = Math.min(w * 0.6, 300);
-
-    this.add.text(cx, h * 0.2, '👤 角色選擇', { fontSize: '20px', color: '#ddddff' }).setOrigin(0.5);
-
-    const chars = [
-      { id: 'char_swordsman', name: '劍客・蕭風', desc: 'HP 100 | 攻擊 1.0x', color: 0x4488ff },
-      { id: 'char_monk', name: '武僧・空見', desc: 'HP 130 | 攻擊 0.9x', color: 0xffaa44 },
-      { id: 'char_assassin', name: '刺客・夜影', desc: 'HP 70 | 速度快', color: 0x44ff88 },
-    ];
-
-    const gap = Math.min(h * 0.12, 60);
-    const startY = h * 0.3;
-
-    chars.forEach((ch, i) => {
-      const y = startY + i * gap;
-      const sel = ch.id === this.selectedCharacterId;
-
-      const card = this.add.rectangle(cx, y, cardW, 44, sel ? 0x3a2a6a : 0x1a1a3a, 0.9)
-        .setStrokeStyle(2, sel ? 0xffdd00 : 0x333355)
-        .setInteractive({ useHandCursor: true });
-      this.add.rectangle(cx - cardW * 0.4, y, 20, 20, ch.color);
-      this.add.text(cx - cardW * 0.3, y - 8, `${sel ? '✓ ' : ''}${ch.name}`, {
-        fontSize: '13px', color: sel ? '#ffdd00' : '#ffffff',
-      });
-      this.add.text(cx - cardW * 0.3, y + 8, ch.desc, { fontSize: '10px', color: '#999999' });
-
-      card.on('pointerdown', () => { this.selectedCharacterId = ch.id; this.drawAll(); });
-    });
-
-    this.drawBackButton(w, h);
-  }
-
-  private drawMapSelect(w: number, h: number): void {
-    const cx = w / 2;
-    const cardW = Math.min(w * 0.6, 300);
-
-    this.add.text(cx, h * 0.2, '🗺 選擇地圖', { fontSize: '20px', color: '#ddddff' }).setOrigin(0.5);
-
-    const maps = [
-      { id: 'forest', name: '🌲 幽暗森林', desc: '適合新手', color: 0x2d5a1e },
-      { id: 'cemetery', name: '⚰ 荒廢墓地', desc: '進階難度', color: 0x3a3a5a },
-    ];
-
-    const gap = Math.min(h * 0.14, 70);
-    maps.forEach((m, i) => {
-      const y = h * 0.34 + i * gap;
-      const sel = m.id === this.selectedMapId;
-
-      const card = this.add.rectangle(cx, y, cardW, 48, sel ? 0x3a2a6a : 0x1a1a3a, 0.9)
-        .setStrokeStyle(2, sel ? 0xffdd00 : 0x333355)
-        .setInteractive({ useHandCursor: true });
-      this.add.rectangle(cx - cardW * 0.38, y, 28, 28, m.color);
-      this.add.text(cx - cardW * 0.25, y - 8, m.name, {
-        fontSize: '14px', color: sel ? '#ffdd00' : '#ffffff',
-      });
-      this.add.text(cx - cardW * 0.25, y + 8, m.desc, { fontSize: '10px', color: '#999999' });
-
-      card.on('pointerdown', () => { this.selectedMapId = m.id; this.drawAll(); });
-    });
-
-    this.makeBtn(cx, h * 0.68, '⚔  開始戰鬥！', () => this.startGame(), Math.min(w * 0.35, 180));
-    this.drawBackButton(w, h);
   }
 
   private drawUpgrades(w: number, h: number): void {
@@ -274,19 +199,5 @@ export class MainMenuScene extends Phaser.Scene {
     data.settings.musicVolume = this.musicVolume;
     data.settings.sfxVolume = this.sfxVolume;
     this.saveSystem.save(data);
-  }
-
-  private startGame(): void {
-    this.scale.removeAllListeners('resize');
-    this.scene.start('Game', { characterId: this.selectedCharacterId, mapId: this.selectedMapId });
-  }
-
-  private getCharName(): string {
-    const names: Record<string, string> = { char_swordsman: '蕭風', char_monk: '空見', char_assassin: '夜影' };
-    return names[this.selectedCharacterId] ?? '未知';
-  }
-
-  private getMapName(): string {
-    return this.selectedMapId === 'forest' ? '幽暗森林' : '荒廢墓地';
   }
 }

@@ -125,20 +125,21 @@ export class GameScene extends Phaser.Scene {
       () => this.player.getEffectiveStat('attackPower'),
     );
 
-    // MVP: 玩家一開始就擁有三種自動武器
+    // 根據角色給予初始武器（資料驅動）
     const allWeapons = weaponsData as WeaponConfig[];
-    
-    // 1. 飛劍環繞（太極環）
-    const orbitWeapon = allWeapons.find(w => w.weaponId === 'weapon_taichi_ring');
-    if (orbitWeapon) this.weaponSystem.addWeapon(orbitWeapon);
-    
-    // 2. 劍氣射擊（追風劍）
-    const projectileWeapon = allWeapons.find(w => w.weaponId === 'weapon_wind_sword');
-    if (projectileWeapon) this.weaponSystem.addWeapon(projectileWeapon);
-    
-    // 3. 靈氣爆發（烈焰掌）
-    const auraWeapon = allWeapons.find(w => w.weaponId === 'weapon_flame_palm');
-    if (auraWeapon) this.weaponSystem.addWeapon(auraWeapon);
+    const startingWeapon = allWeapons.find(w => w.weaponId === charConfig.startingWeaponId);
+    if (startingWeapon) {
+      this.weaponSystem.addWeapon(startingWeapon);
+    } else {
+      console.warn(`Starting weapon ${charConfig.startingWeaponId} not found for character ${characterId}`);
+    }
+
+    // 套用角色天賦（StatModifier）
+    if (charConfig.talentModifiers && charConfig.talentModifiers.length > 0) {
+      for (const modifier of charConfig.talentModifiers) {
+        this.player.applyStatModifier(modifier);
+      }
+    }
 
     // 8. Wave Manager
     const enemyConfigsList = enemiesData as EnemyConfig[];
@@ -156,6 +157,7 @@ export class GameScene extends Phaser.Scene {
     this.levelUpSystem = new LevelUpSystem(
       this.weaponSystem, allWeapons, allPassives,
       (options) => this.showLevelUpUI(options),
+      charConfig.startingWeaponId, // 傳入初始武器 ID，避免在升級選項中重複出現
     );
 
     // 11. Camera
@@ -684,10 +686,21 @@ export class GameScene extends Phaser.Scene {
       const found = characters.find(c => c.characterId === characterId);
       if (found) return found;
     }
+    // 預設角色：青衣劍客
     return {
-      characterId: 'char_swordsman', displayName: '劍客・蕭風', atlasFrame: 'char-swordsman',
-      baseHP: 100, baseMoveSpeed: 150, baseAttackPower: 1.0, basePickupRange: 50,
-      startingWeaponId: 'weapon_wind_sword', unlockedByDefault: true, unlockCost: 0,
+      characterId: 'char_blue_swordsman',
+      displayName: '青衣劍客',
+      atlasFrame: 'char-swordsman',
+      baseHP: 100,
+      baseMoveSpeed: 165,
+      baseAttackPower: 1.0,
+      basePickupRange: 50,
+      startingWeaponId: 'weapon_wind_sword',
+      talentName: '輕功身法',
+      talentDescription: '移動速度 +10%',
+      talentModifiers: [{ stat: 'moveSpeed', value: 0.1, type: 'percent' }],
+      unlockedByDefault: true,
+      unlockCost: 0,
     };
   }
 

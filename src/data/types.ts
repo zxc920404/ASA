@@ -54,6 +54,9 @@ export interface CharacterConfig {
   baseAttackPower: number;
   basePickupRange: number;
   startingWeaponId: string;
+  talentName?: string; // 角色天賦名稱
+  talentDescription?: string; // 角色天賦描述
+  talentModifiers?: StatModifier[]; // 角色天賦提供的屬性修改器
   unlockedByDefault: boolean;
   unlockCost: number;
 }

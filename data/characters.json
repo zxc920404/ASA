@@ -1,38 +1,53 @@
 [
   {
-    "characterId": "char_swordsman",
-    "displayName": "劍客・蕭風",
+    "characterId": "char_blue_swordsman",
+    "displayName": "青衣劍客",
     "atlasFrame": "char-swordsman",
     "baseHP": 100,
-    "baseMoveSpeed": 150,
+    "baseMoveSpeed": 165,
     "baseAttackPower": 1.0,
     "basePickupRange": 50,
     "startingWeaponId": "weapon_wind_sword",
+    "talentName": "輕功身法",
+    "talentDescription": "移動速度 +10%",
+    "talentModifiers": [
+      { "stat": "moveSpeed", "value": 0.1, "type": "percent" }
+    ],
     "unlockedByDefault": true,
     "unlockCost": 0
   },
   {
-    "characterId": "char_monk",
-    "displayName": "武僧・空見",
+    "characterId": "char_armored_monk",
+    "displayName": "玄甲武僧",
     "atlasFrame": "char-monk",
     "baseHP": 130,
-    "baseMoveSpeed": 130,
-    "baseAttackPower": 0.9,
-    "basePickupRange": 45,
-    "startingWeaponId": "weapon_drunk_fist",
-    "unlockedByDefault": false,
-    "unlockCost": 500
+    "baseMoveSpeed": 135,
+    "baseAttackPower": 0.95,
+    "basePickupRange": 50,
+    "startingWeaponId": "weapon_taichi_ring",
+    "talentName": "金剛不壞",
+    "talentDescription": "最大生命 +20%",
+    "talentModifiers": [
+      { "stat": "maxHP", "value": 0.2, "type": "percent" }
+    ],
+    "unlockedByDefault": true,
+    "unlockCost": 0
   },
   {
-    "characterId": "char_assassin",
-    "displayName": "刺客・夜影",
+    "characterId": "char_flame_master",
+    "displayName": "赤焰掌門",
     "atlasFrame": "char-assassin",
-    "baseHP": 70,
-    "baseMoveSpeed": 180,
-    "baseAttackPower": 1.2,
-    "basePickupRange": 60,
-    "startingWeaponId": "weapon_hidden_rain",
-    "unlockedByDefault": false,
-    "unlockCost": 800
+    "baseHP": 90,
+    "baseMoveSpeed": 150,
+    "baseAttackPower": 1.1,
+    "basePickupRange": 50,
+    "startingWeaponId": "weapon_flame_palm",
+    "talentName": "烈焰真氣",
+    "talentDescription": "範圍攻擊傷害 +10%",
+    "talentModifiers": [
+      { "stat": "attackPower", "value": 0.1, "type": "percent" }
+    ],
+    "unlockedByDefault": true,
+    "unlockCost": 0
   }
 ]
