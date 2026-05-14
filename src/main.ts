@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { CharacterSelectScene } from './scenes/CharacterSelectScene';
+import { MapSelectScene } from './scenes/MapSelectScene';
 import { GameScene } from './scenes/GameScene';
 
 // 動態計算遊戲尺寸（考慮 safe area）
@@ -32,7 +33,7 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: import.meta.env.DEV,
     },
   },
-  scene: [BootScene, MainMenuScene, CharacterSelectScene, GameScene],
+  scene: [BootScene, MainMenuScene, CharacterSelectScene, MapSelectScene, GameScene],
   render: {
     pixelArt: true,
     antialias: false,

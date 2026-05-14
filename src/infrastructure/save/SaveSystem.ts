@@ -54,7 +54,7 @@ export class SaveSystem {
     return {
       gold: 0,
       permanentUpgradeLevels: [0, 0, 0, 0, 0],
-      unlockedCharacterIds: ['char_swordsman'],
+      unlockedCharacterIds: ['char_blue_swordsman', 'char_armored_monk', 'char_flame_master'],
       settings: {
         musicVolume: 0.7,
         sfxVolume: 1.0,

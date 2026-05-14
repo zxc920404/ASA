@@ -29,15 +29,20 @@
         -webkit-tap-highlight-color: transparent;
       }
       
-      body {
-        /* 支援 iOS safe area */
-        padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      #app {
+        width: 100vw;
+        height: 100dvh;
+        overflow: hidden;
+        position: relative;
       }
       
       canvas {
         display: block;
-        width: 100%;
-        height: 100%;
+        width: 100vw !important;
+        height: 100dvh !important;
+        position: absolute;
+        top: 0;
+        left: 0;
       }
       
       /* 直向提示遮罩 */
@@ -47,7 +52,7 @@
         left: 0;
         width: 100vw;
         height: 100dvh;
-        background: rgba(0, 0, 0, 0.9);
+        background: rgba(0, 0, 0, 0.95);
         display: none;
         justify-content: center;
         align-items: center;
@@ -75,8 +80,9 @@
       }
       
       #orientation-warning .text {
-        font-size: 18px;
+        font-size: 20px;
         line-height: 1.6;
+        font-weight: bold;
       }
       
       #orientation-warning .subtext {
@@ -87,6 +93,9 @@
     </style>
   </head>
   <body>
+    <!-- 遊戲容器 -->
+    <div id="app"></div>
+    
     <!-- 直向提示 -->
     <div id="orientation-warning">
       <div class="icon">📱</div>
@@ -112,7 +121,9 @@
       
       window.addEventListener('load', checkOrientation);
       window.addEventListener('resize', checkOrientation);
-      window.addEventListener('orientationchange', checkOrientation);
+      window.addEventListener('orientationchange', () => {
+        setTimeout(checkOrientation, 100);
+      });
     </script>
   </body>
 </html>
