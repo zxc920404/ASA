@@ -5,28 +5,24 @@ import { PlayerCharacter } from '../gameplay/player/PlayerCharacter';
 import { WeaponSystem } from '../gameplay/weapons/WeaponSystem';
 import { Projectile } from '../gameplay/weapons/Projectile';
 import { EnemySpawner } from '../gameplay/enemies/EnemySpawner';
+import { EnemyBase } from '../gameplay/enemies/EnemyBase';
 import { WaveManager } from '../gameplay/wave/WaveManager';
 import { DropSystem } from '../gameplay/drop/DropSystem';
+import { XPGem } from '../gameplay/drop/DropSystem';
 import { LevelUpSystem, LevelUpOption } from '../gameplay/level-up/LevelUpSystem';
 import { DamageTextManager } from '../ui/hud/DamageTextManager';
 import { PauseMenuUI } from '../ui/menus/PauseMenuUI';
 import { AudioManager } from '../infrastructure/audio/AudioManager';
 import { SaveSystem } from '../infrastructure/save/SaveSystem';
 import { LocalStorageSaveProvider } from '../infrastructure/save/LocalStorageSaveProvider';
-import { CharacterConfig, WeaponConfig, EnemyConfig, PassiveItemConfig } from '../data/types';
+import { CharacterConfig, WeaponConfig, EnemyConfig, PassiveItemConfig, PoolConfigData } from '../data/types';
 import { ObjectPool } from '../core/pool/ObjectPool';
+import { GameState } from '../core/types';
 
 import weaponsData from '../data/weapons.json';
 import enemiesData from '../data/enemies.json';
 import passiveItemsData from '../data/passive-items.json';
-
-export enum GameState {
-  Playing = 'playing',
-  Paused = 'paused',
-  LevelUp = 'levelUp',
-  GameOver = 'gameOver',
-  Victory = 'victory',
-}
+import poolConfigData from '../data/pool-config.json';
 
 const MAP_WIDTH = 5000;
 const MAP_HEIGHT = 5000;
@@ -97,14 +93,9 @@ export class GameScene extends Phaser.Scene {
     // 1. Ground
     this.createGround();
 
-    // 2. Pool Manager
+    // 2. Pool Manager - 初始化並依據 pool-config.json 預分配所有對象池
     this.poolManager = new ObjectPoolManager();
-
-    // 3. Register projectile pool
-    this.projectilePool = this.poolManager.register(
-      { poolId: 'projectile', preAllocateCount: 100, maxBatchExpansion: 10 },
-      () => new Projectile(this),
-    );
+    this.initializeObjectPools();
 
     // 4. Player
     const characterId = data?.characterId ?? 'char_swordsman';
@@ -167,7 +158,8 @@ export class GameScene extends Phaser.Scene {
     // 12. Physics
     this.physics.world.setBounds(0, 0, MAP_WIDTH, MAP_HEIGHT);
 
-    // 13. Collision: enemy contact damage is checked manually in update()
+    // 13. 設定 Arcade Physics 碰撞群組
+    this.setupCollisionGroups();
 
     // 14. HUD
     this.createHUD();
@@ -218,12 +210,217 @@ export class GameScene extends Phaser.Scene {
     // Try to play BGM (will silently skip if audio not loaded)
     const mapId = data?.mapId ?? 'forest';
     this.audioManager.playBGM(`bgm-${mapId}`);
+    
+    // 18. 輸出所有物件池的統計資訊（所有系統初始化完成後）
+    this.logPoolStatistics();
+  }
+
+  /**
+   * 初始化 ObjectPoolManager 並依據 pool-config.json 預分配所有對象池
+   * 這個方法在遊戲開始前預先分配所有需要的物件池，避免遊戲進行中一次性生成大量物件造成幀率驟降
+   * 
+   * 注意：部分物件池（enemy_normal, xp_gem）由各自的系統（EnemySpawner, DropSystem）註冊
+   * 這裡只預分配那些尚未由其他系統註冊的物件池
+   */
+  private initializeObjectPools(): void {
+    console.log('[GameScene] Initializing object pools from pool-config.json...');
+    
+    // 讀取 pool-config.json
+    const poolConfig = poolConfigData as PoolConfigData;
+    
+    // 依據配置預分配所有對象池
+    for (const poolEntry of poolConfig.pools) {
+      const { poolId, preAllocateCount, maxBatchExpansion } = poolEntry;
+      
+      console.log(`[GameScene] Checking pool: ${poolId} (preAllocate: ${preAllocateCount}, maxExpansion: ${maxBatchExpansion})`);
+      
+      // 根據 poolId 創建對應的工廠函數
+      switch (poolId) {
+        case 'projectile':
+          // 投射物池在這裡註冊（WeaponSystem 會使用）
+          this.projectilePool = this.poolManager.register(
+            { poolId, preAllocateCount, maxBatchExpansion },
+            () => new Projectile(this)
+          );
+          console.log(`[GameScene] ✓ Registered pool: ${poolId} (${preAllocateCount} objects pre-allocated)`);
+          break;
+          
+        case 'enemy_normal':
+          // 敵人池由 EnemySpawner 註冊，這裡跳過
+          console.log(`[GameScene] → Pool ${poolId} will be registered by EnemySpawner`);
+          break;
+          
+        case 'enemy_boss':
+          // Boss 敵人池（目前未使用，預留）
+          console.log(`[GameScene] → Pool ${poolId} reserved for future use`);
+          break;
+          
+        case 'xp_gem':
+          // XP 寶石池由 DropSystem 註冊，這裡跳過
+          console.log(`[GameScene] → Pool ${poolId} will be registered by DropSystem`);
+          break;
+          
+        case 'item_drop':
+          // TODO: 實作 ItemDrop poolable object
+          console.warn(`[GameScene] ⚠ Pool ${poolId} not yet implemented, skipping...`);
+          break;
+          
+        case 'damage_text':
+          // DamageText 使用自己的池管理系統（在 DamageTextManager 中）
+          // 這裡不需要註冊到 ObjectPoolManager
+          console.log(`[GameScene] → Pool ${poolId} managed by DamageTextManager`);
+          break;
+          
+        case 'vfx':
+          // TODO: 實作 VFX poolable object
+          console.warn(`[GameScene] ⚠ Pool ${poolId} not yet implemented, skipping...`);
+          break;
+          
+        default:
+          console.warn(`[GameScene] ⚠ Unknown pool ID: ${poolId}, skipping...`);
+          break;
+      }
+    }
+    
+    console.log('[GameScene] Object pool initialization phase 1 complete. Additional pools will be registered by their respective systems.');
+  }
+
+  /**
+   * 輸出所有物件池的統計資訊
+   * 在所有系統初始化完成後調用，用於驗證物件池是否正確預分配
+   */
+  private logPoolStatistics(): void {
+    console.log('\n========== Object Pool Statistics ==========');
+    
+    const allStats = this.poolManager.getAllStats();
+    
+    if (allStats.size === 0) {
+      console.warn('[GameScene] No pools registered in ObjectPoolManager');
+      return;
+    }
+    
+    let totalPreAllocated = 0;
+    let totalActive = 0;
+    let totalPeak = 0;
+    
+    allStats.forEach((stats, poolId) => {
+      console.log(`\n[Pool: ${poolId}]`);
+      console.log(`  Pre-allocated: ${stats.preAllocated} objects`);
+      console.log(`  Currently active: ${stats.currentActive} objects`);
+      console.log(`  Peak usage: ${stats.peakActive} objects`);
+      console.log(`  Total expansions: ${stats.totalExpansions} times`);
+      
+      // 計算使用率
+      if (stats.preAllocated > 0) {
+        const utilizationRate = ((stats.peakActive / stats.preAllocated) * 100).toFixed(1);
+        console.log(`  Peak utilization: ${utilizationRate}%`);
+        
+        // 警告：如果峰值使用率超過 80%，建議增加預分配數量
+        if (stats.peakActive / stats.preAllocated > 0.8) {
+          console.warn(`  ⚠ High utilization detected! Consider increasing preAllocateCount for ${poolId}`);
+        }
+      }
+      
+      // 警告：如果發生過擴容，說明預分配數量可能不足
+      if (stats.totalExpansions > 0) {
+        console.warn(`  ⚠ Pool expanded ${stats.totalExpansions} times during gameplay. Consider increasing preAllocateCount.`);
+      }
+      
+      totalPreAllocated += stats.preAllocated;
+      totalActive += stats.currentActive;
+      totalPeak += stats.peakActive;
+    });
+    
+    console.log('\n========== Summary ==========');
+    console.log(`Total pools registered: ${allStats.size}`);
+    console.log(`Total objects pre-allocated: ${totalPreAllocated}`);
+    console.log(`Total objects currently active: ${totalActive}`);
+    console.log(`Total peak usage: ${totalPeak}`);
+    console.log('============================================\n');
+  }
+  }
+
+  /**
+   * 設定 Arcade Physics 碰撞群組
+   * 建立玩家、敵人、子彈、掉落物等群組，並設定群組之間的碰撞檢測規則
+   */
+  private setupCollisionGroups(): void {
+    // 注意：Phaser Arcade Physics 不像 Matter.js 有內建的碰撞群組系統
+    // 我們使用 Phaser.Physics.Arcade.Group 來組織物件，並手動設定碰撞規則
+    
+    // 玩家群組（單一物件）
+    // 玩家已經在 PlayerCharacter 中啟用了物理 body
+    if (this.player.sprite.body) {
+      const body = this.player.sprite.body as Phaser.Physics.Arcade.Body;
+      body.setCollideWorldBounds(true); // 玩家不能超出地圖邊界
+      body.setSize(32, 32); // 設定碰撞體積
+      body.setOffset(0, 0); // 設定碰撞偏移
+    }
+
+    // 敵人群組
+    // 敵人的物理 body 在 EnemyBase 中啟用
+    // 這裡我們確保敵人的碰撞設定正確
+    // 敵人之間的碰撞推擠在 resolveEnemyCollisions() 中手動處理（效能考量）
+
+    // 投射物群組
+    // 投射物的物理 body 在 Projectile 中啟用
+    // 投射物與敵人的碰撞在 checkProjectileEnemyCollisions() 中手動處理（效能考量）
+
+    // 掉落物群組
+    // 掉落物的物理 body 在 DropSystem 中啟用
+    // 掉落物與玩家的碰撞在 DropSystem.update() 中手動處理（吸附效果）
+
+    // 碰撞規則說明：
+    // 1. 玩家 vs 敵人：接觸傷害（手動檢測於 checkEnemyContactDamage）
+    // 2. 投射物 vs 敵人：造成傷害（手動檢測於 checkProjectileEnemyCollisions）
+    // 3. 玩家 vs 掉落物：拾取（手動檢測於 DropSystem.update）
+    // 4. 敵人 vs 敵人：推擠（手動檢測於 resolveEnemyCollisions）
+    // 5. 投射物 vs 投射物：無碰撞
+    // 6. 掉落物 vs 掉落物：無碰撞
+    // 7. 掉落物 vs 敵人：無碰撞
+    
+    // 使用手動碰撞檢測而非 Phaser 內建碰撞系統的原因：
+    // - 更好的效能控制（可以跳幀、限制檢測範圍）
+    // - 更靈活的碰撞邏輯（如 AoE 穿透、吸附效果）
+    // - 避免大量物件時的效能問題（200+ 敵人 + 100+ 投射物）
+    
+    console.log('[GameScene] Arcade Physics collision groups configured (manual collision detection)');
   }
 
   update(_time: number, delta: number): void {
-    if (this.gameState !== GameState.Playing) return;
-    if (this.pauseMenuUI?.paused) return;
+    // 根據 GameState 控制更新邏輯
+    switch (this.gameState) {
+      case GameState.Playing:
+        // Playing: 正常遊戲更新
+        this.updateGameplay(_time, delta);
+        break;
 
+      case GameState.Paused:
+        // Paused: 暫停時不更新遊戲邏輯，僅保持渲染
+        // 不執行任何遊戲邏輯更新
+        break;
+
+      case GameState.LevelUp:
+        // LevelUp: 升級選擇時暫停遊戲邏輯
+        // 物理系統已在 showLevelUpUI() 中暫停
+        // 不執行任何遊戲邏輯更新
+        break;
+
+      case GameState.GameOver:
+      case GameState.Victory:
+        // GameOver/Victory: 結束狀態，不更新遊戲邏輯
+        // 結算畫面已顯示，等待玩家選擇
+        break;
+
+      default:
+        // 未知狀態，預設不更新
+        console.warn(`Unknown GameState: ${this.gameState}`);
+        break;
+    }
+  }
+
+  private updateGameplay(_time: number, delta: number): void {
+    // 累積遊戲時間
     this.gameTime += delta / 1000;
 
     // Input
@@ -502,111 +699,161 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createGround(): void {
-    // === 1. 檢查是否有草地背景圖片，如果沒有則生成 ===
-    if (!this.textures.exists('grass_bg')) {
-      // 生成草地背景紋理
-      this.generateGrassTexture();
-    }
+    // === 1. 建立 Tilemap（使用 Phaser.Tilemaps API，100x100 Tiles）===
+    this.createTilemap();
     
-    // === 2. 平鋪草地背景（加入隨機偏移打破規律性）===
-    const grassBg = this.add.tileSprite(0, 0, MAP_WIDTH, MAP_HEIGHT, 'grass_bg');
-    grassBg.setOrigin(0, 0);
-    grassBg.setDepth(-20);
-    // 隨機偏移 tile 起始位置，打破重複感
-    grassBg.setTilePosition(Math.random() * 512, Math.random() * 512);
-    
-    // === 3. 單層半透明 overlay（移除噪點層以提升效能）===
-    const overlay1 = this.add.graphics();
-    overlay1.fillStyle(0x0a0a0a, 0.3);
-    overlay1.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
-    overlay1.setDepth(-18);
-    
-    // === 4. 優化後的裝飾物（大幅減少數量）===
+    // === 2. 優化後的裝飾物（大幅減少數量）===
     this.createMapDecorations();
     
-    // === 5. 創建暗角效果（固定在螢幕上）===
+    // === 3. 創建暗角效果（固定在螢幕上）===
     this.vignette = this.add.graphics().setScrollFactor(0).setDepth(95);
     this.updateVignette();
-    
-    // === 6. 移除漂浮粒子以提升效能 ===
-    // this.createAmbientParticles(); // 暫時停用
   }
-  
-  private generateGrassTexture(): void {
-    // 生成 512x512 的無縫草地紋理
-    const size = 512;
+
+  /**
+   * 建立 Tilemap（使用 Phaser.Tilemaps API）
+   * - 地圖大小：100x100 tiles
+   * - Tile 大小：50x50 像素
+   * - 總地圖尺寸：5000x5000 像素（符合 MAP_WIDTH 和 MAP_HEIGHT）
+   */
+  private createTilemap(): void {
+    // 定義 tile 尺寸和地圖尺寸
+    const TILE_SIZE = 50;
+    const MAP_TILES_WIDTH = 100;
+    const MAP_TILES_HEIGHT = 100;
+
+    // 生成 tileset 紋理（如果不存在）
+    if (!this.textures.exists('tileset-grass')) {
+      this.generateTilesetTexture();
+    }
+
+    // 建立空白 tilemap
+    const map = this.make.tilemap({
+      tileWidth: TILE_SIZE,
+      tileHeight: TILE_SIZE,
+      width: MAP_TILES_WIDTH,
+      height: MAP_TILES_HEIGHT,
+    });
+
+    // 添加 tileset（使用生成的草地 tileset）
+    const tileset = map.addTilesetImage('tileset-grass', 'tileset-grass', TILE_SIZE, TILE_SIZE, 0, 0);
+
+    if (!tileset) {
+      console.error('Failed to create tileset');
+      return;
+    }
+
+    // 建立 Ground 圖層
+    const groundLayer = map.createBlankLayer('Ground', tileset, 0, 0);
+
+    if (!groundLayer) {
+      console.error('Failed to create ground layer');
+      return;
+    }
+
+    // 填充地圖 tiles（使用隨機草地 tiles 增加變化）
+    for (let y = 0; y < MAP_TILES_HEIGHT; y++) {
+      for (let x = 0; x < MAP_TILES_WIDTH; x++) {
+        // 隨機選擇 4 種草地 tile 之一（tile index 0-3）
+        const tileIndex = Math.floor(Math.random() * 4);
+        groundLayer.putTileAt(tileIndex, x, y);
+      }
+    }
+
+    // 設定圖層深度（在背景層）
+    groundLayer.setDepth(-20);
+
+    // 添加半透明 overlay 增加氛圍
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x0a0a0a, 0.25);
+    overlay.fillRect(0, 0, MAP_WIDTH, MAP_HEIGHT);
+    overlay.setDepth(-18);
+
+    console.log(`Tilemap created: ${MAP_TILES_WIDTH}x${MAP_TILES_HEIGHT} tiles (${MAP_WIDTH}x${MAP_HEIGHT} pixels)`);
+  }
+
+  /**
+   * 生成 tileset 紋理（4 種草地 tile 變化）
+   * 每個 tile 為 50x50 像素
+   */
+  private generateTilesetTexture(): void {
+    const TILE_SIZE = 50;
+    const TILES_COUNT = 4; // 4 種草地變化
     const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = TILE_SIZE * TILES_COUNT;
+    canvas.height = TILE_SIZE;
     const ctx = canvas.getContext('2d')!;
-    
-    // 基礎草地顏色（深綠到淺綠漸層，使用徑向漸層讓中心更亮）
-    const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    gradient.addColorStop(0, '#3a6b1e');
-    gradient.addColorStop(0.7, '#2d5016');
-    gradient.addColorStop(1, '#243f12');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, size, size);
-    
-    // 添加草地紋理（隨機深淺綠色點，增加密度）
-    for (let i = 0; i < 3000; i++) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const radius = 1 + Math.random() * 4;
-      const brightness = 0.7 + Math.random() * 0.5;
+
+    // 生成 4 種不同的草地 tile
+    for (let i = 0; i < TILES_COUNT; i++) {
+      const offsetX = i * TILE_SIZE;
       
-      ctx.fillStyle = `rgba(${Math.floor(45 * brightness)}, ${Math.floor(90 * brightness)}, ${Math.floor(30 * brightness)}, ${0.2 + Math.random() * 0.5})`;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
+      // 基礎草地顏色（每個 tile 略有不同）
+      const hueVariation = i * 5;
+      const baseColors = [
+        `#${(0x3a6b1e + hueVariation).toString(16)}`,
+        `#${(0x2d5016 + hueVariation).toString(16)}`,
+        `#${(0x243f12 + hueVariation).toString(16)}`,
+      ];
+
+      // 繪製漸層背景
+      const gradient = ctx.createRadialGradient(
+        offsetX + TILE_SIZE / 2, TILE_SIZE / 2, 0,
+        offsetX + TILE_SIZE / 2, TILE_SIZE / 2, TILE_SIZE / 2
+      );
+      gradient.addColorStop(0, baseColors[0]);
+      gradient.addColorStop(0.7, baseColors[1]);
+      gradient.addColorStop(1, baseColors[2]);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(offsetX, 0, TILE_SIZE, TILE_SIZE);
+
+      // 添加草地紋理細節
+      const detailCount = 40 + Math.random() * 20;
+      for (let j = 0; j < detailCount; j++) {
+        const x = offsetX + Math.random() * TILE_SIZE;
+        const y = Math.random() * TILE_SIZE;
+        const radius = 0.5 + Math.random() * 2;
+        const brightness = 0.7 + Math.random() * 0.5;
+
+        ctx.fillStyle = `rgba(${Math.floor(45 * brightness)}, ${Math.floor(90 * brightness)}, ${Math.floor(30 * brightness)}, ${0.3 + Math.random() * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 添加草叢線條
+      ctx.strokeStyle = 'rgba(30, 60, 20, 0.4)';
+      ctx.lineWidth = 1;
+      for (let j = 0; j < 10; j++) {
+        const x = offsetX + Math.random() * TILE_SIZE;
+        const y = Math.random() * TILE_SIZE;
+        const length = 2 + Math.random() * 6;
+        const angle = Math.random() * Math.PI * 2;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+        ctx.stroke();
+      }
+
+      // 添加隨機深色斑塊
+      if (Math.random() > 0.5) {
+        const patchX = offsetX + Math.random() * TILE_SIZE;
+        const patchY = Math.random() * TILE_SIZE;
+        const patchRadius = 5 + Math.random() * 10;
+        const patchGradient = ctx.createRadialGradient(patchX, patchY, 0, patchX, patchY, patchRadius);
+        patchGradient.addColorStop(0, 'rgba(10, 20, 10, 0.3)');
+        patchGradient.addColorStop(1, 'rgba(10, 20, 10, 0)');
+        ctx.fillStyle = patchGradient;
+        ctx.beginPath();
+        ctx.arc(patchX, patchY, patchRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
-    
-    // 添加草叢紋理（小線條，增加數量）
-    ctx.strokeStyle = 'rgba(30, 60, 20, 0.4)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < 800; i++) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const length = 3 + Math.random() * 10;
-      const angle = Math.random() * Math.PI * 2;
-      
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
-      ctx.stroke();
-    }
-    
-    // 添加深色斑塊增加變化
-    for (let i = 0; i < 50; i++) {
-      const x = Math.random() * size;
-      const y = Math.random() * size;
-      const radius = 10 + Math.random() * 30;
-      const gradient2 = ctx.createRadialGradient(x, y, 0, x, y, radius);
-      gradient2.addColorStop(0, 'rgba(10, 20, 10, 0.3)');
-      gradient2.addColorStop(1, 'rgba(10, 20, 10, 0)');
-      ctx.fillStyle = gradient2;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    
-    // 邊緣柔化處理（讓 tile 接縫更自然）
-    const edgeFade = 30;
-    for (let i = 0; i < edgeFade; i++) {
-      const alpha = (edgeFade - i) / edgeFade * 0.3;
-      ctx.fillStyle = `rgba(35, 60, 20, ${alpha})`;
-      // 上邊
-      ctx.fillRect(0, i, size, 1);
-      // 下邊
-      ctx.fillRect(0, size - i - 1, size, 1);
-      // 左邊
-      ctx.fillRect(i, 0, 1, size);
-      // 右邊
-      ctx.fillRect(size - i - 1, 0, 1, size);
-    }
-    
+
     // 將 canvas 轉換為 Phaser texture
-    this.textures.addCanvas('grass_bg', canvas);
+    this.textures.addCanvas('tileset-grass', canvas);
+    console.log('Tileset texture generated: 4 grass tile variations');
   }
   
   private createMapDecorations(): void {

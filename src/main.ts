@@ -33,6 +33,9 @@ const config: Phaser.Types.Core.GameConfig = {
       debug: import.meta.env.DEV,
     },
   },
+  input: {
+    activePointers: 3, // Support up to 3 simultaneous touches (joystick + 2 UI interactions)
+  },
   scene: [BootScene, MainMenuScene, CharacterSelectScene, MapSelectScene, GameScene],
   render: {
     pixelArt: true,

@@ -74,29 +74,29 @@ This implementation plan converts the Vampire Survivors-like game design into a 
   - [x] 3.2.5 實作設定畫面（音樂/音效音量滑桿）
   - [x] 3.2.6 顯示版本號
 
-- [~] 3.3 實作 GameScene 骨架（scenes/GameScene.ts）
-  - [ ] 3.3.1 create() 初始化 ObjectPoolManager 並依據 pool-config.json 預分配
-  - [ ] 3.3.2 建立 Tilemap（使用 Phaser.Tilemaps，至少 100x100 Tile）
-  - [ ] 3.3.3 設定 Phaser 攝影機跟隨玩家（平滑跟隨）
-  - [ ] 3.3.4 設定 Arcade Physics 碰撞群組
-  - [~] 3.3.5 實作 update() 主迴圈（依 GameState 控制更新邏輯）
-  - [~] 3.3.6 實作 GameState 列舉（Playing、Paused、LevelUp、GameOver、Victory）
+- [x] 3.3 實作 GameScene 骨架（scenes/GameScene.ts）
+  - [x] 3.3.1 create() 初始化 ObjectPoolManager 並依據 pool-config.json 預分配
+  - [x] 3.3.2 建立 Tilemap（使用 Phaser.Tilemaps，至少 100x100 Tile）
+  - [x] 3.3.3 設定 Phaser 攝影機跟隨玩家（平滑跟隨）
+  - [x] 3.3.4 設定 Arcade Physics 碰撞群組
+  - [x] 3.3.5 實作 update() 主迴圈（依 GameState 控制更新邏輯）
+  - [x] 3.3.6 實作 GameState 列舉（Playing、Paused、LevelUp、GameOver、Victory）
 
 ## 第 4 階段：輸入系統
 
-- [~] 4.1 實作 InputController（infrastructure/input/InputController.ts）
-  - [~] 4.1.1 依據平台自動選擇 TouchInputAdapter 或 KeyboardMouseAdapter
-  - [~] 4.1.2 提供 getMovement() 統一介面
+- [x] 4.1 實作 InputController（infrastructure/input/InputController.ts）
+  - [x] 4.1.1 依據平台自動選擇 TouchInputAdapter 或 KeyboardMouseAdapter
+  - [x] 4.1.2 提供 getMovement() 統一介面
 
-- [ ] 4.2 實作 TouchInputAdapter（infrastructure/input/TouchInputAdapter.ts）
-  - [~] 4.2.1 實作浮動虛擬搖桿（觸碰左半螢幕顯示，釋放隱藏）
-  - [~] 4.2.2 實作搖桿死區（半徑 15%）
-  - [ ] 4.2.3 支援多點觸控（以 pointerId 追蹤搖桿觸控）
-  - [ ] 4.2.4 確保觸控到移動延遲不超過 2 幀
+- [x] 4.2 實作 TouchInputAdapter（infrastructure/input/TouchInputAdapter.ts）
+  - [x] 4.2.1 實作浮動虛擬搖桿（觸碰左半螢幕顯示，釋放隱藏）
+  - [x] 4.2.2 實作搖桿死區（半徑 15%）
+  - [x] 4.2.3 支援多點觸控（以 pointerId 追蹤搖桿觸控）
+  - [x] 4.2.4 確保觸控到移動延遲不超過 2 幀
 
-- [ ] 4.3 實作 KeyboardMouseAdapter（infrastructure/input/KeyboardMouseAdapter.ts）
-  - [~] 4.3.1 WASD 鍵映射為正規化方向向量
-  - [~] 4.3.2 滑鼠點擊支援 UI 操作
+- [x] 4.3 實作 KeyboardMouseAdapter（infrastructure/input/KeyboardMouseAdapter.ts）
+  - [x] 4.3.1 WASD 鍵映射為正規化方向向量
+  - [x] 4.3.2 滑鼠點擊支援 UI 操作
 
 ## 第 5 階段：玩家角色
 
