@@ -1,8 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { SaveSystem } from '../infrastructure/save/SaveSystem';
 import { PermanentUpgradeSystem, PERMANENT_UPGRADES } from '../gameplay/level-up/PermanentUpgradeSystem';
 import { ISaveProvider } from '../core/interfaces/ISaveProvider';
-import { SaveData } from '../data/types';
 
 describe('MainMenuScene - Permanent Upgrade Interface', () => {
   let mockProvider: ISaveProvider;

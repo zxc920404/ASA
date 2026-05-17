@@ -30,7 +30,7 @@ const config: Phaser.Types.Core.GameConfig = {
     default: 'arcade',
     arcade: {
       gravity: { x: 0, y: 0 },
-      debug: import.meta.env.DEV,
+      debug: false, // 關閉物理 debug 模式，移除綠色線條
     },
   },
   input: {

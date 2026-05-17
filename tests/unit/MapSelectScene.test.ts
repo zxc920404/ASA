@@ -6,6 +6,7 @@ describe('MapSelectScene', () => {
   let mockScale: any;
   let mockAdd: any;
   let mockChildren: any;
+  let mockScene: any;
 
   beforeEach(() => {
     scene = new MapSelectScene();

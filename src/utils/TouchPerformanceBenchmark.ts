@@ -131,8 +131,8 @@ export function enablePerformanceMonitoring(): void {
  * 裝飾器：測量函數執行時間
  */
 export function measureLatency(
-  target: any,
-  propertyKey: string,
+  _target: any,
+  _propertyKey: string,
   descriptor: PropertyDescriptor
 ): PropertyDescriptor {
   const originalMethod = descriptor.value;

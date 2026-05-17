@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { CharacterConfig } from '../../src/data/types';
 
 describe('CharacterSelectScene', () => {
@@ -71,9 +71,9 @@ describe('CharacterSelectScene', () => {
       expect(char.talentName).toBe('輕功身法');
       expect(char.talentDescription).toBe('移動速度 +10%');
       expect(char.talentModifiers).toHaveLength(1);
-      expect(char.talentModifiers[0].stat).toBe('moveSpeed');
-      expect(char.talentModifiers[0].value).toBe(0.1);
-      expect(char.talentModifiers[0].type).toBe('percent');
+      expect(char.talentModifiers?.[0].stat).toBe('moveSpeed');
+      expect(char.talentModifiers?.[0].value).toBe(0.1);
+      expect(char.talentModifiers?.[0].type).toBe('percent');
     });
   });
 

@@ -151,7 +151,7 @@ describe('TouchInputAdapter - 響應延遲測試', () => {
     console.log(`最大延遲: ${maxLatency.toFixed(3)}ms`);
 
     // 驗證所有延遲都小於 33ms
-    latencies.forEach((latency, index) => {
+    latencies.forEach((latency) => {
       expect(latency).toBeLessThan(33);
     });
 

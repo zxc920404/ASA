@@ -54,7 +54,7 @@ describe('TouchInputAdapter - 浮動虛擬搖桿 (任務 4.2.1)', () => {
     // 模擬 Phaser Scene
     mockScene = {
       add: {
-        image: vi.fn((x: number, y: number, texture: string) => {
+        image: vi.fn((_x: number, _y: number, texture: string) => {
           if (texture === 'joystick-base') return mockJoystickBase;
           if (texture === 'joystick-thumb') return mockJoystickThumb;
           return null;

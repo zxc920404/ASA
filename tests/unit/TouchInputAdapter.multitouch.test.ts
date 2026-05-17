@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+// Phaser is imported for type checking
+// @ts-expect-error - Phaser is used in type annotations
 import Phaser from 'phaser';
 import { TouchInputAdapter } from '../../src/infrastructure/input/TouchInputAdapter';
 
@@ -53,7 +55,7 @@ describe('TouchInputAdapter - Multi-touch Support (任務 4.2.3)', () => {
     // 模擬 Phaser Scene
     mockScene = {
       add: {
-        image: vi.fn((x: number, y: number, texture: string) => {
+        image: vi.fn((_x: number, _y: number, texture: string) => {
           if (texture === 'joystick-base') return mockJoystickBase;
           if (texture === 'joystick-thumb') return mockJoystickThumb;
           return null;

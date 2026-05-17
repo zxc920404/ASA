@@ -5,10 +5,8 @@ import { PlayerCharacter } from '../gameplay/player/PlayerCharacter';
 import { WeaponSystem } from '../gameplay/weapons/WeaponSystem';
 import { Projectile } from '../gameplay/weapons/Projectile';
 import { EnemySpawner } from '../gameplay/enemies/EnemySpawner';
-import { EnemyBase } from '../gameplay/enemies/EnemyBase';
 import { WaveManager } from '../gameplay/wave/WaveManager';
 import { DropSystem } from '../gameplay/drop/DropSystem';
-import { XPGem } from '../gameplay/drop/DropSystem';
 import { LevelUpSystem, LevelUpOption } from '../gameplay/level-up/LevelUpSystem';
 import { DamageTextManager } from '../ui/hud/DamageTextManager';
 import { PauseMenuUI } from '../ui/menus/PauseMenuUI';
@@ -18,6 +16,9 @@ import { LocalStorageSaveProvider } from '../infrastructure/save/LocalStorageSav
 import { CharacterConfig, WeaponConfig, EnemyConfig, PassiveItemConfig, PoolConfigData } from '../data/types';
 import { ObjectPool } from '../core/pool/ObjectPool';
 import { GameState } from '../core/types';
+
+// Re-export GameState for tests
+export { GameState } from '../core/types';
 
 import weaponsData from '../data/weapons.json';
 import enemiesData from '../data/enemies.json';
@@ -39,6 +40,7 @@ export class GameScene extends Phaser.Scene {
   private levelUpSystem!: LevelUpSystem;
   private projectilePool!: ObjectPool<Projectile>;
   public damageTextManager!: DamageTextManager;
+  // @ts-expect-error - pauseMenuUI is initialized but not directly accessed
   private pauseMenuUI!: PauseMenuUI;
   private audioManager!: AudioManager;
   private saveSystem!: SaveSystem;
@@ -337,7 +339,6 @@ export class GameScene extends Phaser.Scene {
     console.log(`Total objects currently active: ${totalActive}`);
     console.log(`Total peak usage: ${totalPeak}`);
     console.log('============================================\n');
-  }
   }
 
   /**
@@ -898,9 +899,9 @@ export class GameScene extends Phaser.Scene {
     
     this.vignette.clear();
     
-    // 繪製更柔和的漸層暗角
-    const gradientSteps = 120; // 增加漸層步數讓過渡更平滑
-    const maxAlpha = 0.7; // 最大暗角透明度
+    // 繪製更柔和的漸層暗角（大幅優化效能）
+    const gradientSteps = 40; // 從 120 降到 40，減少繪製次數
+    const maxAlpha = 0.25; // 從 0.7 降到 0.25，避免過暗
     
     for (let i = 0; i < gradientSteps; i++) {
       const progress = i / gradientSteps;
@@ -912,19 +913,7 @@ export class GameScene extends Phaser.Scene {
       this.vignette.strokeRect(i, i, camW - i * 2, camH - i * 2);
     }
     
-    // 加入四角額外暗化
-    const cornerSize = 150;
-    const cornerAlpha = 0.3;
-    this.vignette.fillStyle(0x000000, cornerAlpha);
-    
-    // 左上角
-    this.vignette.fillTriangle(0, 0, cornerSize, 0, 0, cornerSize);
-    // 右上角
-    this.vignette.fillTriangle(camW, 0, camW - cornerSize, 0, camW, cornerSize);
-    // 左下角
-    this.vignette.fillTriangle(0, camH, cornerSize, camH, 0, camH - cornerSize);
-    // 右下角
-    this.vignette.fillTriangle(camW, camH, camW - cornerSize, camH, camW, camH - cornerSize);
+    // 移除四角額外暗化以提升效能
   }
   
   private getCharacterConfig(characterId: string): CharacterConfig {

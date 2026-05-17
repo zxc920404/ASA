@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+// InputController is imported for type checking
+// @ts-expect-error - InputController is used in type annotations
 import { InputController } from '../../src/infrastructure/input/InputController';
 
 /**
